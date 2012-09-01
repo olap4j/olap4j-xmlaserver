@@ -1,0 +1,13 @@
+<component name="libraryTable">
+  <library name="Maven: xml-apis:xml-apis:2.0.2">
+    <CLASSES>
+      <root url="jar://$MAVEN_REPOSITORY$/xml-apis/xml-apis/2.0.2/xml-apis-2.0.2.jar!/" />
+    </CLASSES>
+    <JAVADOC>
+      <root url="jar://$MAVEN_REPOSITORY$/xml-apis/xml-apis/2.0.2/xml-apis-2.0.2-javadoc.jar!/" />
+    </JAVADOC>
+    <SOURCES>
+      <root url="jar://$MAVEN_REPOSITORY$/xml-apis/xml-apis/2.0.2/xml-apis-2.0.2-sources.jar!/" />
+    </SOURCES>
+  </library>
+</component>
