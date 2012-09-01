@@ -13,9 +13,7 @@ import mondrian.xmla.SaxWriter;
 
 import org.olap4j.xmla.server.impl.ArrayStack;
 import org.olap4j.xmla.server.impl.Util;
-
-import org.eigenbase.xom.XMLUtil;
-import org.eigenbase.xom.XOMUtil;
+import org.olap4j.xmla.server.impl.XmlUtil;
 
 import org.xml.sax.Attributes;
 
@@ -96,7 +94,7 @@ public class DefaultSaxWriter implements SaxWriter {
         writer.write('<');
         writer.write(qName);
         for (int i = 0; i < atts.getLength(); i++) {
-            XMLUtil.printAtt(writer, atts.getQName(i), atts.getValue(i));
+            XmlUtil.printAtt(writer, atts.getQName(i), atts.getValue(i));
         }
         state = STATE_IN_TAG;
     }
@@ -136,15 +134,15 @@ public class DefaultSaxWriter implements SaxWriter {
         // Display the string, quoting in <![CDATA[ ... ]]> if necessary,
         // or using XML escapes as a last result.
         String s = new String(ch, start, length);
-        if (XOMUtil.stringHasXMLSpecials(s)) {
-            XMLUtil.stringEncodeXML(s, writer);
+        if (XmlUtil.stringHasXmlSpecials(s)) {
+            XmlUtil.stringEncodeXml(s, writer);
 /*
             if (s.indexOf("]]>") < 0) {
                 writer.print("<![CDATA[");
                 writer.print(s);
                 writer.print("]]>");
             } else {
-                XMLUtil.stringEncodeXML(s, writer);
+                XMLUtil.stringEncodeXml(s, writer);
             }
 */
         } else {
