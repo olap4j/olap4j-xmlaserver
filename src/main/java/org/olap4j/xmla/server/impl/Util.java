@@ -8,11 +8,9 @@
 // Copyright (C) 2005-2012 Pentaho and others
 // All Rights Reserved.
 */
-package mondrian.olap;
+package org.olap4j.xmla.server.impl;
 
 import org.apache.commons.collections.Predicate;
-
-import org.eigenbase.xom.XOMUtil;
 
 import java.math.BigDecimal;
 import java.math.MathContext;
@@ -22,9 +20,40 @@ import java.util.regex.Pattern;
 /**
  * Cut-down version of mondrian.olap.Util.
  */
-public class Util extends XOMUtil {
+public class Util {
 
     public static final String nl = System.getProperty("line.separator");
+
+    /**
+     * When the compiler is complaining that you are not using a variable, just
+     * call one of these routines with it.
+     **/
+    public static void discard(boolean b) {
+    }
+
+    public static void discard(byte b) {
+    }
+
+    public static void discard(char c) {
+    }
+
+    public static void discard(double d) {
+    }
+
+    public static void discard(float d) {
+    }
+
+    public static void discard(int i) {
+    }
+
+    public static void discard(long l) {
+    }
+
+    public static void discard(Object o) {
+    }
+
+    public static void discard(short s) {
+    }
 
     /**
      * Appends a double-quoted string to a string builder.

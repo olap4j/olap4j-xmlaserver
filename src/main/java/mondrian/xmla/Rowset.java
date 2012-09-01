@@ -10,7 +10,7 @@
 */
 package mondrian.xmla;
 
-import mondrian.olap.Util;
+import org.olap4j.xmla.server.impl.Util;
 
 import org.apache.log4j.Logger;
 
@@ -378,7 +378,7 @@ abstract class Rowset implements XmlaConstants {
      * Creates a condition functor based on the restrictions on a given metadata
      * column specified in an XMLA request.
      *
-     * <p>A condition is a {@link mondrian.olap.Util.Function1} whose return
+     * <p>A condition is a {@link org.olap4j.xmla.server.impl.Util.Function1} whose return
      * type is boolean.
      *
      * Restrictions are used in each Rowset's discovery request. If there is no

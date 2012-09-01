@@ -10,8 +10,8 @@
 */
 package mondrian.xmla;
 
-import mondrian.olap.*;
-import mondrian.util.Composite;
+import org.olap4j.xmla.server.impl.Composite;
+import org.olap4j.xmla.server.impl.Util;
 
 import org.olap4j.OlapConnection;
 import org.olap4j.OlapException;
@@ -37,7 +37,8 @@ import java.text.Format;
 import java.text.SimpleDateFormat;
 import java.util.*;
 
-import static mondrian.olap.Util.filter;
+import static org.olap4j.xmla.server.impl.Util.filter;
+
 import static mondrian.xmla.XmlaConstants.*;
 import static mondrian.xmla.XmlaHandler.getExtra;
 
@@ -1814,6 +1815,7 @@ public enum RowsetDefinition {
             XmlaResponse response, OlapConnection connection, List<Row> rows)
             throws XmlaException
         {
+            final XmlaHandler.XmlaExtra extra = getExtra(connection);
             for (PropertyDefinition propertyDefinition
                 : PropertyDefinition.class.getEnumConstants())
             {
@@ -1827,7 +1829,7 @@ public enum RowsetDefinition {
                 row.set(PropertyType.name, propertyDefinition.type.getName());
                 row.set(PropertyAccessType.name, propertyDefinition.access);
                 row.set(IsRequired.name, false);
-                row.set(Value.name, propertyDefinition.value);
+                row.set(Value.name, extra.getPropertyValue(propertyDefinition));
                 addRow(row, rows);
             }
         }
@@ -2005,8 +2007,8 @@ public enum RowsetDefinition {
             XmlaResponse response, OlapConnection connection, List<Row> rows)
             throws XmlaException
         {
-            MondrianServer mondrianServer = MondrianServer.forId(null);
-            for (String keyword : mondrianServer.getKeywords()) {
+            final XmlaHandler.XmlaExtra extra = getExtra(connection);
+            for (String keyword : extra.getKeywords()) {
                 Row row = new Row();
                 row.set(Keyword.name, keyword);
                 addRow(row, rows);
@@ -3031,6 +3033,7 @@ TODO: see above
             List<Row> rows)
             throws XmlaException, OlapException
         {
+            final XmlaHandler.XmlaExtra extra = getExtra(connection);
             for (Catalog catalog
                 : catIter(connection, catNameCond(), tableCatalogCond))
             {
@@ -3071,7 +3074,7 @@ TODO: see above
                                 : dimension.getHierarchies())
                             {
                                 populateHierarchy(
-                                    cube, hierarchy, rows);
+                                    extra, cube, hierarchy, rows);
                             }
                         }
                     }
@@ -3080,7 +3083,10 @@ TODO: see above
         }
 
         private void populateHierarchy(
-            Cube cube, Hierarchy hierarchy, List<Row> rows)
+            XmlaHandler.XmlaExtra extra,
+            Cube cube,
+            Hierarchy hierarchy,
+            List<Row> rows)
         {
             if (hierarchy.getName().endsWith("$Parent")) {
                 // We don't return generated Parent-Child
@@ -3088,11 +3094,12 @@ TODO: see above
                 return;
             }
             for (Level level : hierarchy.getLevels()) {
-                populateLevel(cube, hierarchy, level, rows);
+                populateLevel(extra, cube, hierarchy, level, rows);
             }
         }
 
         private void populateLevel(
+            XmlaHandler.XmlaExtra extra,
             Cube cube,
             Hierarchy hierarchy,
             Level level,
@@ -3100,7 +3107,7 @@ TODO: see above
         {
             String schemaName = cube.getSchema().getName();
             String cubeName = cube.getName();
-            String hierarchyName = getHierarchyName(hierarchy);
+            String hierarchyName = extra.getHierarchyName(hierarchy);
             String levelName = level.getName();
 
             String tableName =
@@ -4017,41 +4024,6 @@ TODO: see above
             Byte("Byte subtype"),
             Array("Array subtype");
 
-            public static VarType forCategory(int category) {
-                switch (category) {
-                case Category.Unknown:
-                    // expression == unknown ???
-                    // case Category.Expression:
-                    return Empty;
-                case Category.Array:
-                    return Array;
-                case Category.Dimension:
-                case Category.Hierarchy:
-                case Category.Level:
-                case Category.Member:
-                case Category.Set:
-                case Category.Tuple:
-                case Category.Cube:
-                case Category.Value:
-                    return Variant;
-                case Category.Logical:
-                    return Boolean;
-                case Category.Numeric:
-                    return Double;
-                case Category.String:
-                case Category.Symbol:
-                case Category.Constant:
-                    return String;
-                case Category.DateTime:
-                    return Date;
-                case Category.Integer:
-                case Category.Mask:
-                    return Integer;
-                }
-                // NOTE: this should never happen
-                return Empty;
-            }
-
             VarType(String description) {
                 Util.discard(description);
             }
@@ -4488,7 +4460,7 @@ TODO: see above
             if (desc == null) {
                 desc =
                     cube.getName() + " Cube - "
-                    + getHierarchyName(hierarchy) + " Hierarchy";
+                    + extra.getHierarchyName(hierarchy) + " Hierarchy";
             }
 
             Row row = new Row();
@@ -4853,7 +4825,7 @@ TODO: see above
             if (desc == null) {
                 desc =
                     cube.getName() + " Cube - "
-                    + getHierarchyName(hierarchy) + " Hierarchy - "
+                    + extra.getHierarchyName(hierarchy) + " Hierarchy - "
                     + level.getName() + " Level";
             }
 
@@ -6054,8 +6026,7 @@ TODO: see above
         private void populateMember(List<Row> rows) throws SQLException {
             OlapConnection connection =
                 handler.getConnection(
-                    request,
-                    Collections.<String, String>emptyMap());
+                    request, Collections.<String, String>emptyMap());
             for (Catalog catalog
                 : catIter(connection, catNameCond(), catalogCond))
             {
@@ -6153,11 +6124,12 @@ TODO: see above
                     continue;
                 }
                 outputProperty(
-                    property, catalog, cube, level, rows);
+                    extra, property, catalog, cube, level, rows);
             }
         }
 
         private void outputProperty(
+            XmlaHandler.XmlaExtra extra,
             Property property,
             Catalog catalog,
             Cube cube,
@@ -6193,7 +6165,7 @@ TODO: see above
 
             String desc =
                 cube.getName() + " Cube - "
-                + getHierarchyName(hierarchy) + " Hierarchy - "
+                + extra.getHierarchyName(hierarchy) + " Hierarchy - "
                 + level.getName() + " Level - "
                 + property.getName() + " Property";
             row.set(Description.name, desc);
@@ -6308,17 +6280,6 @@ TODO: see above
             Collections.singletonList(
                 new SharedDimensionHolderCube(schema)),
             iterable);
-    }
-
-    private static String getHierarchyName(Hierarchy hierarchy) {
-        String hierarchyName = hierarchy.getName();
-        if (MondrianProperties.instance().SsasCompatibleNaming.get()
-            && !hierarchyName.equals(hierarchy.getDimension().getName()))
-        {
-            hierarchyName =
-                hierarchy.getDimension().getName() + "." + hierarchyName;
-        }
-        return hierarchyName;
     }
 
     private static XmlaRequest wrapRequest(

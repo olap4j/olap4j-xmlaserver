@@ -4,12 +4,10 @@
 // http://www.eclipse.org/legal/epl-v10.html.
 // You must accept the terms of that agreement to use this software.
 //
-// Copyright (C) 2006-2009 Pentaho and others
+// Copyright (C) 2006-2012 Pentaho and others
 // All Rights Reserved.
 */
 package mondrian.xmla;
-
-import mondrian.olap.MondrianException;
 
 /**
  * An exception thrown while processing an XMLA request. The faultcode
@@ -18,7 +16,7 @@ import mondrian.olap.MondrianException;
  *
  * @author <a>Richard M. Emberson</a>
  */
-public class XmlaException extends MondrianException {
+public class XmlaException extends RuntimeException {
 
     public static String formatFaultCode(XmlaException xex) {
         return formatFaultCode(xex.getFaultCode(), xex.getCode());

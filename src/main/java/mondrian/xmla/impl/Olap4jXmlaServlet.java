@@ -9,9 +9,10 @@
 */
 package mondrian.xmla.impl;
 
-import mondrian.olap.Util;
 import mondrian.xmla.XmlaHandler;
 import mondrian.xmla.XmlaRequest;
+
+import org.olap4j.xmla.server.impl.Util;
 
 import org.apache.commons.dbcp.BasicDataSource;
 import org.apache.commons.dbcp.DelegatingConnection;

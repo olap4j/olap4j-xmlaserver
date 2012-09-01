@@ -10,10 +10,10 @@
 */
 package mondrian.xmla;
 
-import mondrian.olap.MondrianProperties;
-import mondrian.olap.Util;
-import mondrian.util.CompositeList;
 import mondrian.xmla.impl.DefaultSaxWriter;
+
+import org.olap4j.xmla.server.impl.CompositeList;
+import org.olap4j.xmla.server.impl.Util;
 
 import org.apache.log4j.Logger;
 
@@ -1345,9 +1345,6 @@ public class XmlaHandler {
         final String advancedFlag =
             properties.get(PropertyDefinition.AdvancedFlag.name());
         final boolean advanced = Boolean.parseBoolean(advancedFlag);
-        final boolean enableRowCount =
-            MondrianProperties.instance().EnableTotalCount.booleanValue();
-        final int[] rowCountSlot = enableRowCount ? new int[]{0} : null;
         OlapConnection connection = null;
         OlapStatement statement = null;
         ResultSet resultSet = null;
@@ -1355,8 +1352,11 @@ public class XmlaHandler {
             connection =
                 getConnection(request, Collections.<String, String>emptyMap());
             statement = connection.createStatement();
+            final XmlaExtra extra = getExtra(connection);
+            final boolean enableRowCount = extra.isTotalCountEnabled();
+            final int[] rowCountSlot = enableRowCount ? new int[]{0} : null;
             resultSet =
-                getExtra(connection).executeDrillthrough(
+                extra.executeDrillthrough(
                     statement,
                     request.getStatement(),
                     advanced,
@@ -3047,6 +3047,38 @@ public class XmlaHandler {
         Map<String, Object> getAnnotationMap(MetadataElement element)
             throws SQLException;
 
+        /**
+         * Returns how the name of a hierarchy is to be printed in the
+         * response to an XMLA metadata request.
+         *
+         * @param hierarchy Hierarchy
+         * @return Formatted hierarchy name
+         */
+        String getHierarchyName(Hierarchy hierarchy);
+
+        /**
+         * Returns whether the first row in the result of an XML/A drill-through
+         * request will be filled with the total count of rows in underlying
+         * database.
+         */
+        boolean isTotalCountEnabled();
+
+        /**
+         * Returns the value of a property.
+         *
+         * @param propertyDefinition Property definition
+         *
+         * @return Value of the property
+         */
+        String getPropertyValue(PropertyDefinition propertyDefinition);
+
+        /**
+         * Returns a list of MDX keywords.
+         *
+         * @return list of MDX keywords
+         */
+        List<String> getKeywords();
+
         class FunctionDefinition {
             public final String functionName;
             public final String description;
@@ -3174,17 +3206,40 @@ public class XmlaHandler {
             final String providerTypes = createCsv(olapDb.getProviderTypes());
             return Collections.singletonList(
                 Olap4jUtil.mapOf(
-                    "DataSourceName", (Object) olapDb.getName(),
-                    "DataSourceDescription", olapDb.getDescription(),
-                    "URL", olapDb.getURL(),
-                    "DataSourceInfo", olapDb.getDataSourceInfo(),
-                    "ProviderName", olapDb.getProviderName(),
-                    "ProviderType", providerTypes,
-                    "AuthenticationMode", modes));
+                    "DataSourceName",
+                    (Object) olapDb.getName(),
+                    "DataSourceDescription",
+                    olapDb.getDescription(),
+                    "URL",
+                    olapDb.getURL(),
+                    "DataSourceInfo",
+                    olapDb.getDataSourceInfo(),
+                    "ProviderName",
+                    olapDb.getProviderName(),
+                    "ProviderType",
+                    providerTypes,
+                    "AuthenticationMode",
+                    modes));
         }
 
         public Map<String, Object> getAnnotationMap(MetadataElement element) {
             return Collections.emptyMap();
+        }
+
+        public String getHierarchyName(Hierarchy hierarchy) {
+            return hierarchy.getName();
+        }
+
+        public boolean isTotalCountEnabled() {
+            return false;
+        }
+
+        public String getPropertyValue(PropertyDefinition propertyDefinition) {
+            return propertyDefinition.value;
+        }
+
+        public List<String> getKeywords() {
+            return Collections.emptyList();
         }
     }
 

@@ -5,12 +5,10 @@
 // You must accept the terms of that agreement to use this software.
 //
 // Copyright (C) 2003-2005 Julian Hyde
-// Copyright (C) 2005-2011 Pentaho
+// Copyright (C) 2005-2012 Pentaho
 // All Rights Reserved.
 */
 package mondrian.xmla;
-
-import mondrian.olap.MondrianServer;
 
 import org.olap4j.impl.Olap4jUtil;
 import org.olap4j.metadata.XmlaConstants;
@@ -150,7 +148,7 @@ public enum PropertyDefinition {
         RowsetDefinition.Type.String,
         null,
         XmlaConstants.Access.Read,
-        "Mondrian XML for Analysis Provider",
+        "olap4j-xmlaserver",
         XmlaConstants.Method.DISCOVER,
         "The XML for Analysis Provider name."),
 
@@ -158,7 +156,7 @@ public enum PropertyDefinition {
         RowsetDefinition.Type.String,
         null,
         XmlaConstants.Access.Read,
-        MondrianServer.forId(null).getVersion().getVersionString(),
+        "0.1",
         XmlaConstants.Method.DISCOVER,
         "The version of the Mondrian XMLA Provider"),
 

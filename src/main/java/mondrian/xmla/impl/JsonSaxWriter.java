@@ -4,14 +4,15 @@
 // http://www.eclipse.org/legal/epl-v10.html.
 // You must accept the terms of that agreement to use this software.
 //
-// Copyright (C) 2010-2010 Pentaho
+// Copyright (C) 2010-2012 Pentaho
 // All Rights Reserved.
 */
 package mondrian.xmla.impl;
 
-import mondrian.olap.Util;
-import mondrian.util.ArrayStack;
 import mondrian.xmla.SaxWriter;
+
+import org.olap4j.xmla.server.impl.ArrayStack;
+import org.olap4j.xmla.server.impl.Util;
 
 import java.io.IOException;
 import java.io.OutputStream;

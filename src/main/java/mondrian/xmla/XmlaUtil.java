@@ -5,14 +5,14 @@
 // You must accept the terms of that agreement to use this software.
 //
 // Copyright (C) 2003-2005 Julian Hyde
-// Copyright (C) 2005-2011 Pentaho
+// Copyright (C) 2005-2012 Pentaho
 // All Rights Reserved.
 */
 package mondrian.xmla;
 
-import mondrian.olap.MondrianException;
-import mondrian.olap.Util;
 import mondrian.xmla.impl.DefaultXmlaResponse;
+
+import org.olap4j.xmla.server.impl.Util;
 
 import org.olap4j.OlapConnection;
 import org.olap4j.OlapException;
@@ -235,7 +235,7 @@ way too noisy
     public static Throwable rootThrowable(Throwable throwable) {
         Throwable rootThrowable = throwable.getCause();
         if (rootThrowable != null
-            && rootThrowable instanceof MondrianException)
+            && rootThrowable instanceof XmlaException)
         {
             return rootThrowable(rootThrowable);
         }
