@@ -58,11 +58,9 @@ public abstract class AuthenticatingXmlaRequestCallback
         Map<String, Object> context)
         throws Exception
     {
-        /*
-         * This is where the magic happens. At this stage, we have
-         * the username/password known. We will delegate the authentication
-         * process down to the subclass.
-         */
+        // This is where the magic happens. At this stage, we have
+        // the username/password known. We will delegate the authentication
+        // process down to the subclass.
         final String roleNames =
             authenticate(
                 (String) context.get(XmlaConstants.CONTEXT_XMLA_USERNAME),

@@ -40,12 +40,11 @@ public interface XmlaRequestCallback {
                 ex);
         }
 
-        /*
-    HTTP/1.1 100 Continue
-    Server: Microsoft-IIS/5.0
-    Date: Tue, 21 Feb 2006 21:07:57 GMT
-    X-Powered-By: ASP.NET
-        */
+
+        // HTTP/1.1 100 Continue
+        // Server: Microsoft-IIS/5.0
+        // Date: Tue, 21 Feb 2006 21:07:57 GMT
+        // X-Powered-By: ASP.NET
         public static void generatedExpectResponse(
             HttpServletRequest request,
             HttpServletResponse response,

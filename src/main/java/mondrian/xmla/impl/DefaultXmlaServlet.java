@@ -555,13 +555,11 @@ public abstract class DefaultXmlaServlet extends XmlaServlet {
                 break;
             }
 
-            /*
-             * The setCharacterEncoding, setContentType, or setLocale method
-             * must be called BEFORE getWriter or getOutputStream and before
-             * committing the response for the character encoding to be used.
-             *
-             * @see javax.servlet.ServletResponse
-             */
+            // The setCharacterEncoding, setContentType, or setLocale method
+            // must be called BEFORE getWriter or getOutputStream and before
+            // committing the response for the character encoding to be used.
+            //
+            // See javax.servlet.ServletResponse
             OutputStream outputStream = response.getOutputStream();
 
 

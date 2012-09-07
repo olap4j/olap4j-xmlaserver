@@ -28,7 +28,7 @@ public abstract class Composite {
     public static <T> List<T> of(
         List<? extends T>... lists)
     {
-        return CompositeList.<T>of(lists);
+        return CompositeList.of(lists);
     }
 
     /**
@@ -55,19 +55,20 @@ public abstract class Composite {
     public static <T> Iterator<T> of(
         Iterator<? extends T>... iterators)
     {
-        final Iterator[] iterators1 = (Iterator[]) iterators;
-        return new CompositeIterator<T>(iterators1);
+        //noinspection unchecked
+        return new CompositeIterator<T>((Iterator[]) iterators);
     }
 
     private static class CompositeIterable<T> implements Iterable<T> {
-        private final Iterable<? extends T>[] iterables;
+        private final Iterable[] iterables;
 
-        public CompositeIterable(Iterable<? extends T>[] iterables) {
+        private CompositeIterable(Iterable[] iterables) {
             this.iterables = iterables;
         }
 
         public Iterator<T> iterator() {
-            return new CompositeIterator(iterables);
+            //noinspection unchecked
+            return new CompositeIterator<T>(iterables);
         }
     }
 
@@ -79,16 +80,14 @@ public abstract class Composite {
 
         public CompositeIterator(Iterator<T>[] iterables) {
             this.iteratorIterator = Arrays.asList(iterables).iterator();
-            this.iterator = Collections.<T>emptyList().iterator();
+            this.iterator = EmptyIterator.instance();
             this.hasNext = true;
             advance();
         }
 
-        public CompositeIterator(final Iterable<T>[] iterables) {
-            this.iteratorIterator =
-                new IterableIterator<T>(iterables);
-                Arrays.asList(iterables).iterator();
-            this.iterator = Collections.<T>emptyList().iterator();
+        public CompositeIterator(Iterable<T>[] iterables) {
+            this.iteratorIterator = new IterableIterator<T>(iterables);
+            this.iterator = EmptyIterator.instance();
             this.hasNext = true;
             advance();
         }
@@ -143,6 +142,27 @@ public abstract class Composite {
 
         public void remove() {
             throw new UnsupportedOperationException();
+        }
+    }
+
+    private static class EmptyIterator implements Iterator {
+        private static final Iterator INSTANCE = new EmptyIterator();
+
+        private static <T> Iterator<T> instance() {
+            //noinspection unchecked
+            return INSTANCE;
+        }
+
+        public boolean hasNext() {
+            return false;
+        }
+
+        public Object next() {
+            throw new NoSuchElementException();
+        }
+
+        public void remove() {
+            throw new IllegalStateException();
         }
     }
 }

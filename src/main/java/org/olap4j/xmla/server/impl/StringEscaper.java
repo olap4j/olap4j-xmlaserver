@@ -17,70 +17,85 @@
 */
 package org.olap4j.xmla.server.impl;
 
+import java.io.IOException;
 import java.util.*;
 
 /**
  * Utility for replacing special characters
  * with escape sequences in strings.
  *
- * <p>Initially, a StringEscaper starts out as
- * an identity transform in the "mutable" state.  Call defineEscape as many
- * times as necessary to set up mappings, and then call makeImmutable() before
- * using appendEscapedString to actually apply the defined transform.  Or, use
- * one of the global mappings pre-defined here.</p>
+ * <p>To create a StringEscaper, create a builder.
+ * Initially it is the identity transform (it leaves every character unchanged).
+ * Call {@link Builder#defineEscape} as many
+ * times as necessary to set up mappings, and then call {@link Builder#build}
+ * to create a StringEscaper.</p>
+ *
+ * <p>StringEscaper is immutable, but you can call {@link #toBuilder()} to
+ * get a builder back.</p>
+ *
+ * <p>Several escapers are pre-defined:</p>
+ *
+ * <dl>
+ *     <dt>{@link #HTML_ESCAPER}</dt>
+ *     <dd>HTML (using &amp;amp;, &amp;&lt;, etc.)</dd>
+ *     <dt>{@link #XML_ESCAPER}</dt>
+ *     <dd>XML (same as HTML escaper)</dd>
+ *     <dt>{@link #XML_NUMERIC_ESCAPER}</dt>
+ *     <dd>Uses numeric codes, e.g. &amp;#38; for &amp;.</dd>
+ *     <dt>{@link #URL_ARG_ESCAPER}</dt>
+ *     <dd>Converts '?' and '&amp;' in URL arguments into URL format</dd>
+ *     <dt>{@link #URL_ESCAPER}</dt>
+ *     <dd>Converts to URL format</dd>
+ * </dl>
  */
-public class StringEscaper implements Cloneable
+public class StringEscaper
 {
-    private ArrayList translationVector;
-    private String [] translationTable;
+    private final String [] translationTable;
 
-    public static StringEscaper xmlEscaper;
-    public static StringEscaper xmlNumericEscaper;
-    public static StringEscaper htmlEscaper;
-    public static StringEscaper urlArgEscaper;
-    public static StringEscaper urlEscaper;
+    public static final StringEscaper HTML_ESCAPER =
+        new Builder()
+            .defineEscape('&', "&amp;")
+            .defineEscape('"', "&quot;")
+            .defineEscape('\'', "&#39;") // not "&apos;"
+            .defineEscape('<', "&lt;")
+            .defineEscape('>', "&gt;")
+            .build();
+
+    public static final StringEscaper XML_ESCAPER = HTML_ESCAPER;
+
+    public static final StringEscaper XML_NUMERIC_ESCAPER =
+        new Builder()
+            .defineEscape('&',"&#38;")
+            .defineEscape('"',"&#34;")
+            .defineEscape('\'',"&#39;")
+            .defineEscape('<',"&#60;")
+            .defineEscape('>',"&#62;")
+            .defineEscape('\t',"&#9;")
+            .defineEscape('\n',"&#10;")
+            .defineEscape('\r',"&#13;")
+            .build();
+
+    public static final StringEscaper URL_ARG_ESCAPER =
+        new Builder()
+            .defineEscape('?', "%3f")
+            .defineEscape('&', "%26")
+            .build();
+
+    public static final StringEscaper URL_ESCAPER =
+        URL_ARG_ESCAPER.toBuilder()
+            .defineEscape('%', "%%")
+            .defineEscape('"', "%22")
+            .defineEscape('\r', "+")
+            .defineEscape('\n', "+")
+            .defineEscape(' ', "+")
+            .defineEscape('#', "%23")
+            .build();
 
     /**
-     * Identity transform
+     * Creates a StringEscaper. Only called from Builder.
      */
-    public StringEscaper()
-    {
-        translationVector = new ArrayList();
-    }
-
-    /**
-     * Map character "from" to escape sequence "to"
-     */
-    public void defineEscape(char from,String to)
-    {
-        int i = (int) from;
-        if (i >= translationVector.size()) {
-            // Extend list by adding the requisite number of nulls.
-            final int count = i + 1 - translationVector.size();
-            translationVector.addAll(
-                new AbstractList() {
-                    public Object get(int index) {
-                        return null;
-                    }
-
-                    public int size() {
-                        return count;
-                    }
-                });
-        }
-        translationVector.set(i, to);
-    }
-
-    /**
-     * Call this before attempting to escape strings; after this,
-     * defineEscape may not be called again.
-     */
-    public void makeImmutable()
-    {
-        translationTable =
-            (String[]) translationVector.toArray(
-                new String[translationVector.size()]);
-        translationVector = null;
+    private StringEscaper(String[] translationTable) {
+        this.translationTable = translationTable;
     }
 
     /**
@@ -88,7 +103,7 @@ public class StringEscaper implements Cloneable
      */
     public String escapeString(String s)
     {
-        StringBuffer sb = null;
+        StringBuilder sb = null;
         int n = s.length();
         for (int i = 0; i < n; i++) {
             char c = s.charAt(i);
@@ -107,7 +122,7 @@ public class StringEscaper implements Cloneable
                 }
             } else {
                 if (sb == null) {
-                    sb = new StringBuffer(n * 2);
+                    sb = new StringBuilder(n * 2);
                     sb.append(s.substring(0, i));
                 }
                 sb.append(escape);
@@ -122,7 +137,7 @@ public class StringEscaper implements Cloneable
     }
 
     /**
-     * Apply an immutable transformation to the given string, writing the
+     * Applies an immutable transformation to the given string, writing the
      * results to a string buffer.
      */
     public void appendEscapedString(String s, StringBuffer sb)
@@ -144,68 +159,79 @@ public class StringEscaper implements Cloneable
         }
     }
 
-    protected Object clone()
+    /**
+     * Applies an immutable transformation to the given string, writing the
+     * results to an {@link Appendable} (such as a {@link StringBuilder}).
+     */
+    public void appendEscapedString(String s, Appendable sb) throws IOException
     {
-        StringEscaper clone = new StringEscaper();
-        if (translationVector != null) {
-            clone.translationVector = new ArrayList(translationVector);
+        int n = s.length();
+        for (int i = 0; i < n; i++) {
+            char c = s.charAt(i);
+            String escape;
+            if (c >= translationTable.length) {
+                escape = null;
+            } else {
+                escape = translationTable[c];
+            }
+            if (escape == null) {
+                sb.append(c);
+            } else {
+                sb.append(escape);
+            }
         }
-        if (translationTable != null) {
-            clone.translationTable = (String[]) translationTable.clone();
-        }
-        return clone;
     }
 
     /**
-     * Create a mutable escaper from an existing escaper, which may
-     * already be immutable.
+     * Creates a builder from an existing escaper.
      */
-    public StringEscaper getMutableClone()
+    public Builder toBuilder()
     {
-        StringEscaper clone = (StringEscaper) clone();
-        if (clone.translationVector == null) {
-            clone.translationVector =
-                new ArrayList(Arrays.asList(clone.translationTable));
-            clone.translationTable = null;
+        return new Builder(
+            new ArrayList<String>(Arrays.asList(translationTable)));
+    }
+
+    /**
+     * Builder for {@link StringEscaper} instances.
+     */
+    public static class Builder {
+        private final List<String> translationVector;
+
+        public Builder() {
+            this(new ArrayList<String>());
         }
-        return clone;
+
+        private Builder(List<String> translationVector) {
+            this.translationVector = translationVector;
+        }
+
+        /**
+         * Creates an escaper with the current state of the translation
+         * table.
+         *
+         * @return A string escaper
+         */
+        public StringEscaper build() {
+            return new StringEscaper(
+                translationVector.toArray(
+                    new String[translationVector.size()]));
+        }
+
+        /**
+         * Map character "from" to escape sequence "to"
+         */
+        public Builder defineEscape(char from, String to) {
+            int i = (int) from;
+            if (i >= translationVector.size()) {
+                // Extend list by adding the requisite number of nulls.
+                translationVector.addAll(
+                    Collections.<String>nCopies(
+                        i + 1 - translationVector.size(), null));
+            }
+            translationVector.set(i, to);
+            return this;
+        }
     }
-
-    static
-    {
-        htmlEscaper = new StringEscaper();
-        htmlEscaper.defineEscape('&', "&amp;");
-        htmlEscaper.defineEscape('"', "&quot;");
-//      htmlEscaper.defineEscape('\'',"&apos;");
-        htmlEscaper.defineEscape('\'', "&#39;");
-        htmlEscaper.defineEscape('<', "&lt;");
-        htmlEscaper.defineEscape('>', "&gt;");
-
-        xmlNumericEscaper = new StringEscaper();
-        xmlNumericEscaper.defineEscape('&',"&#38;");
-        xmlNumericEscaper.defineEscape('"',"&#34;");
-        xmlNumericEscaper.defineEscape('\'',"&#39;");
-        xmlNumericEscaper.defineEscape('<',"&#60;");
-        xmlNumericEscaper.defineEscape('>',"&#62;");
-
-        urlArgEscaper = new StringEscaper();
-        urlArgEscaper.defineEscape('?', "%3f");
-        urlArgEscaper.defineEscape('&', "%26");
-        urlEscaper = urlArgEscaper.getMutableClone();
-        urlEscaper.defineEscape('%', "%%");
-        urlEscaper.defineEscape('"', "%22");
-        urlEscaper.defineEscape('\r', "+");
-        urlEscaper.defineEscape('\n', "+");
-        urlEscaper.defineEscape(' ', "+");
-        urlEscaper.defineEscape('#', "%23");
-
-        htmlEscaper.makeImmutable();
-        xmlEscaper = htmlEscaper;
-        xmlNumericEscaper.makeImmutable();
-        urlArgEscaper.makeImmutable();
-        urlEscaper.makeImmutable();
-    }
-
 }
 
 // End StringEscaper.java

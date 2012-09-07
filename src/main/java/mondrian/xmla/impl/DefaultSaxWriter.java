@@ -11,9 +11,7 @@ package mondrian.xmla.impl;
 
 import mondrian.xmla.SaxWriter;
 
-import org.olap4j.xmla.server.impl.ArrayStack;
-import org.olap4j.xmla.server.impl.Util;
-import org.olap4j.xmla.server.impl.XmlUtil;
+import org.olap4j.xmla.server.impl.*;
 
 import org.xml.sax.Attributes;
 
@@ -36,9 +34,9 @@ public class DefaultSaxWriter implements SaxWriter {
     /** After a burst of character data. */
     private static final int STATE_CHARACTERS = 3;
 
-    private final PrintWriter writer;
+    private final Appendable buf;
     private int indent;
-    private String indentStr = "  ";
+    private final String indentStr = "  ";
     private final ArrayStack<String> stack = new ArrayStack<String>();
     private int state = STATE_END_ELEMENT;
 
@@ -47,33 +45,32 @@ public class DefaultSaxWriter implements SaxWriter {
      * Creates a DefaultSaxWriter writing to an {@link java.io.OutputStream}.
      */
     public DefaultSaxWriter(OutputStream stream) {
-        this(new OutputStreamWriter(stream));
+        this(new BufferedWriter(new OutputStreamWriter(stream)));
     }
 
     public DefaultSaxWriter(OutputStream stream, String xmlEncoding)
         throws UnsupportedEncodingException
     {
-        this(new OutputStreamWriter(stream, xmlEncoding));
+        this(new BufferedWriter(new OutputStreamWriter(stream, xmlEncoding)));
     }
 
     /**
-     * Creates a <code>SAXWriter</code> writing to a {@link java.io.Writer}.
+     * Creates a DefaultSaxWriter without indentation.
      *
-     * <p>If <code>writer</code> is a {@link java.io.PrintWriter},
-     * {@link #DefaultSaxWriter(java.io.OutputStream)} is preferred.
+     * @param buf String builder to write to
      */
-    public DefaultSaxWriter(Writer writer) {
-        this(new PrintWriter(writer), 0);
+    public DefaultSaxWriter(Appendable buf) {
+        this(buf, 0);
     }
 
     /**
-     * Creates a DefaultSaxWriter writing to a {@link java.io.PrintWriter}.
+     * Creates a DefaultSaxWriter.
      *
-     * @param writer
-     * @param initialIndent
+     * @param buf String builder to write to
+     * @param initialIndent Initial indent (0 to write on single line)
      */
-    public DefaultSaxWriter(PrintWriter writer, int initialIndent) {
-        this.writer = writer;
+    public DefaultSaxWriter(Appendable buf, int initialIndent) {
+        this.buf = buf;
         this.indent = initialIndent;
     }
 
@@ -81,84 +78,76 @@ public class DefaultSaxWriter implements SaxWriter {
         String namespaceURI,
         String localName,
         String qName,
-        Attributes atts)
+        Attributes atts) throws IOException
     {
         _checkTag();
         if (indent > 0) {
-            writer.println();
+            buf.append(Util.nl);
         }
         for (int i = 0; i < indent; i++) {
-            writer.write(indentStr);
+            buf.append(indentStr);
         }
         indent++;
-        writer.write('<');
-        writer.write(qName);
-        for (int i = 0; i < atts.getLength(); i++) {
-            XmlUtil.printAtt(writer, atts.getQName(i), atts.getValue(i));
+        buf.append('<');
+        buf.append(qName);
+        final int length = atts.getLength();
+        for (int i = 0; i < length; i++) {
+            String val = atts.getValue(i);
+            if (val != null) {
+                buf.append(' ');
+                buf.append(atts.getQName(i));
+                buf.append("=\"");
+                StringEscaper.XML_NUMERIC_ESCAPER.appendEscapedString(val, buf);
+                buf.append("\"");
+            }
         }
         state = STATE_IN_TAG;
+        assert qName != null;
+        stack.add(qName);
     }
 
-    private void _checkTag() {
+    private void _checkTag() throws IOException {
         if (state == STATE_IN_TAG) {
             state = STATE_AFTER_TAG;
-            writer.print(">");
+            buf.append('>');
         }
     }
 
-    private void _endElement(
-        String namespaceURI,
-        String localName,
-        String qName)
+    private void _endElement() throws IOException
     {
+        String qName = stack.pop();
         indent--;
         if (state == STATE_IN_TAG) {
-            writer.write("/>");
+            buf.append("/>");
         } else {
             if (state != STATE_CHARACTERS) {
-                writer.println();
+                buf.append(Util.nl);
                 for (int i = 0; i < indent; i++) {
-                    writer.write(indentStr);
+                    buf.append(indentStr);
                 }
             }
-            writer.write("</");
-            writer.write(qName);
-            writer.write('>');
+            buf.append("</");
+            buf.append(qName);
+            buf.append('>');
         }
         state = STATE_END_ELEMENT;
     }
 
-    private void _characters(char ch[], int start, int length) {
+    private void _characters(String s) throws IOException
+    {
         _checkTag();
-
-        // Display the string, quoting in <![CDATA[ ... ]]> if necessary,
-        // or using XML escapes as a last result.
-        String s = new String(ch, start, length);
-        if (XmlUtil.stringHasXmlSpecials(s)) {
-            XmlUtil.stringEncodeXml(s, writer);
-/*
-            if (s.indexOf("]]>") < 0) {
-                writer.print("<![CDATA[");
-                writer.print(s);
-                writer.print("]]>");
-            } else {
-                XMLUtil.stringEncodeXml(s, writer);
-            }
-*/
-        } else {
-            writer.print(s);
-        }
-
+        StringEscaper.XML_NUMERIC_ESCAPER.appendEscapedString(s, buf);
         state = STATE_CHARACTERS;
     }
-
 
     //
     // Simplifying methods
 
     public void characters(String s) {
-        if (s != null && s.length() > 0) {
-            _characters(s.toCharArray(), 0, s.length());
+        try {
+            _characters(s);
+        } catch (IOException e) {
+            throw new RuntimeException("Error while appending XML", e);
         }
     }
 
@@ -179,18 +168,24 @@ public class DefaultSaxWriter implements SaxWriter {
     }
 
     public final void textElement(String name, Object data) {
-        startElement(name);
-        String s = data.toString();
+        try {
+            _startElement(null, null, name, EmptyAttributes);
+            String s = data.toString();
 
-        // Replace line endings with spaces. IBM's DOM implementation keeps
-        // line endings, whereas Sun's does not. For consistency, always strip
-        // them.
-        //
-        // REVIEW: It would be better to enclose in CDATA, but some clients
-        // might not be expecting this.
-        s = Util.replace(s, Util.nl, " ");
-        characters(s);
-        endElement();
+            // Replace line endings with spaces. IBM's DOM implementation keeps
+            // line endings, whereas Sun's does not. For consistency, always
+            // strip them.
+            //
+            // REVIEW: It would be better to enclose in CDATA, but some clients
+            // might not be expecting this.
+            if (s != null && s.length() > 0) {
+                s = Util.replace(s, Util.nl, " ");
+                _characters(s);
+            }
+            _endElement();
+        } catch (IOException e) {
+            throw new RuntimeException("Error while appending XML", e);
+        }
     }
 
     public void element(String tagName, Object... attributes) {
@@ -199,19 +194,28 @@ public class DefaultSaxWriter implements SaxWriter {
     }
 
     public void startElement(String tagName) {
-        _startElement(null, null, tagName, EmptyAttributes);
-        stack.add(tagName);
+        try {
+            _startElement(null, null, tagName, EmptyAttributes);
+        } catch (IOException e) {
+            throw new RuntimeException("Error while appending XML", e);
+        }
     }
 
     public void startElement(String tagName, Object... attributes) {
-        _startElement(null, null, tagName, new StringAttributes(attributes));
-        assert tagName != null;
-        stack.add(tagName);
+        try {
+            _startElement(
+                null, null, tagName, new StringAttributes(attributes));
+        } catch (IOException e) {
+            throw new RuntimeException("Error while appending XML", e);
+        }
     }
 
     public void endElement() {
-        String tagName = stack.pop();
-        _endElement(null, null, tagName);
+        try {
+            _endElement();
+        } catch (IOException e) {
+            throw new RuntimeException("Error while appending XML", e);
+        }
     }
 
     public void startDocument() {
@@ -225,7 +229,7 @@ public class DefaultSaxWriter implements SaxWriter {
             throw new IllegalStateException(
                 "Document may have unbalanced elements");
         }
-        writer.flush();
+        flush();
     }
 
     public void completeBeforeElement(String tagName) {
@@ -235,19 +239,32 @@ public class DefaultSaxWriter implements SaxWriter {
 
         String currentTagName  = stack.peek();
         while (!tagName.equals(currentTagName)) {
-            _endElement(null, null, currentTagName);
-            stack.pop();
+            try {
+                _endElement();
+            } catch (IOException e) {
+                throw new RuntimeException("Error while appending XML", e);
+            }
             currentTagName = stack.peek();
         }
     }
 
     public void verbatim(String text) {
-        _checkTag();
-        writer.print(text);
+        try {
+            _checkTag();
+            buf.append(text);
+        } catch (IOException e) {
+            throw new RuntimeException("Error while appending XML", e);
+        }
     }
 
     public void flush() {
-        writer.flush();
+        if (buf instanceof Writer) {
+            try {
+                ((Writer) buf).flush();
+            } catch (IOException e) {
+                throw new RuntimeException("Error while flushing XML", e);
+            }
+        }
     }
 
     private static final Attributes EmptyAttributes = new Attributes() {

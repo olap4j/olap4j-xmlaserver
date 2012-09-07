@@ -50,12 +50,12 @@ public interface XmlaConstants {
 
     public static final String SOAP_PREFIX = "SOAP-ENV";
 
-    /*
+    /**
      * Soap Header mustUnderstand attribute name.
      */
     public static final String SOAP_MUST_UNDERSTAND_ATTR = "mustUnderstand";
 
-    /*
+    /**
      * Soap XMLA Header elements and attribute names.
      */
     public static final String XMLA_BEGIN_SESSION      = "BeginSession";
@@ -64,9 +64,8 @@ public interface XmlaConstants {
     public static final String XMLA_SESSION_ID         = "SessionId";
     public static final String XMLA_SECURITY           = "Security";
 
-    /*
-     * Names of context keys known by both callbacks and Mondrian code.
-     */
+    // Names of context keys known by both callbacks and Mondrian code.
+
     // context key for role name storage
     public static final String CONTEXT_ROLE_NAME   = "role_name";
     // context key for language (SOAP or JSON)
