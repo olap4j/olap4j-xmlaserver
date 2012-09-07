@@ -40,7 +40,6 @@ import java.util.*;
 import static org.olap4j.xmla.server.impl.Util.filter;
 
 import static mondrian.xmla.XmlaConstants.*;
-import static mondrian.xmla.XmlaHandler.getExtra;
 
 /**
  * <code>RowsetDefinition</code> defines a rowset, including the columns it
@@ -1593,7 +1592,8 @@ public enum RowsetDefinition {
             throws XmlaException, SQLException
         {
             if (needConnection()) {
-                final XmlaHandler.XmlaExtra extra = getExtra(connection);
+                final XmlaHandler.XmlaExtra extra =
+                    handler.connectionFactory.getExtra();
                 for (Map<String, Object> ds : extra.getDataSources(connection))
                 {
                     Row row = new Row();
@@ -1815,7 +1815,8 @@ public enum RowsetDefinition {
             XmlaResponse response, OlapConnection connection, List<Row> rows)
             throws XmlaException
         {
-            final XmlaHandler.XmlaExtra extra = getExtra(connection);
+            final XmlaHandler.XmlaExtra extra =
+                handler.connectionFactory.getExtra();
             for (PropertyDefinition propertyDefinition
                 : PropertyDefinition.class.getEnumConstants())
             {
@@ -2007,7 +2008,8 @@ public enum RowsetDefinition {
             XmlaResponse response, OlapConnection connection, List<Row> rows)
             throws XmlaException
         {
-            final XmlaHandler.XmlaExtra extra = getExtra(connection);
+            final XmlaHandler.XmlaExtra extra =
+                handler.connectionFactory.getExtra();
             for (String keyword : extra.getKeywords()) {
                 Row row = new Row();
                 row.set(Keyword.name, keyword);
@@ -2161,6 +2163,8 @@ public enum RowsetDefinition {
             XmlaResponse response, OlapConnection connection, List<Row> rows)
             throws XmlaException, SQLException
         {
+            final XmlaHandler.XmlaExtra extra =
+                handler.connectionFactory.getExtra();
             for (Catalog catalog : catIter(connection, catalogNameCond)) {
                 for (Schema schema : catalog.getSchemas()) {
                     Row row = new Row();
@@ -2172,8 +2176,8 @@ public enum RowsetDefinition {
 
                     // get Role names
                     StringBuilder buf = new StringBuilder(100);
-                    List<String> roleNames =
-                        getExtra(connection).getSchemaRoleNames(schema);
+                    final List<String> roleNames =
+                        extra.getSchemaRoleNames(schema);
                     serialize(buf, roleNames);
                     row.set(Roles.name, buf.toString());
 
@@ -2259,17 +2263,16 @@ public enum RowsetDefinition {
                 Column.NOT_RESTRICTION,
                 Column.OPTIONAL,
                 "Not supported.");
-        /*
-         *  A bitmask indicating the information stored in
-         *      DBCOLUMNFLAGS in OLE DB.
-         *  1 = Bookmark
-         *  2 = Fixed length
-         *  4 = Nullable
-         *  8 = Row versioning
-         *  16 = Updateable column
-         *
-         * And, of course, MS SQL Server sometimes has the value of 80!!
-        */
+
+        //  A bitmask indicating the information stored in
+        //      DBCOLUMNFLAGS in OLE DB.
+        //  1 = Bookmark
+        //  2 = Fixed length
+        //  4 = Nullable
+        //  8 = Row versioning
+        //  16 = Updateable column
+        //
+        // And, of course, MS SQL Server sometimes has the value of 80!!
         private static final Column ColumnFlags =
             new Column(
                 "COLUMN_FLAGS",
@@ -2600,15 +2603,6 @@ TODO: see above
             dataTypeCond = makeCondition(DataType);
         }
 
-        /*
-        DATA_TYPE DBTYPE_UI2
-        BEST_MATCH DBTYPE_BOOL
-        Column(String name, Type type, Enumeration enumeratedType,
-        boolean restriction, boolean nullable, String description)
-        */
-        /*
-         * These are the columns returned by SQL Server.
-         */
         private static final Column TypeName =
             new Column(
                 "TYPE_NAME",
@@ -2867,9 +2861,6 @@ TODO: see above
             catalogNameCond = makeCondition(CATALOG_NAME_GETTER, CatalogName);
         }
 
-        /*
-         * These are the columns returned by SQL Server.
-         */
         private static final Column CatalogName =
             new Column(
                 "CATALOG_NAME",
@@ -3013,8 +3004,7 @@ TODO: see above
                 Column.NOT_RESTRICTION,
                 Column.OPTIONAL,
                 "The date the object was last modified.");
-
-        /*
+/*
         private static final Column TableOlapType =
             new Column(
                 "TABLE_OLAP_TYPE",
@@ -3025,7 +3015,7 @@ TODO: see above
                 "The OLAP type of the object.  MEASURE_GROUP indicates the "
                 + "object is a measure group.  CUBE_DIMENSION indicated the "
                 + "object is a dimension.");
-        */
+*/
 
         public void populateImpl(
             XmlaResponse response,
@@ -3033,7 +3023,8 @@ TODO: see above
             List<Row> rows)
             throws XmlaException, OlapException
         {
-            final XmlaHandler.XmlaExtra extra = getExtra(connection);
+            final XmlaHandler.XmlaExtra extra =
+                handler.connectionFactory.getExtra();
             for (Catalog catalog
                 : catIter(connection, catNameCond(), tableCatalogCond))
             {
@@ -3376,12 +3367,11 @@ TODO: see above
                 Column.RESTRICTION,
                 Column.REQUIRED,
                 null);
-        /*
-            TODO: optional columns
-        ACTION_TYPE
-        INVOCATION
-        CUBE_SOURCE
-    */
+
+        // TODO: optional columns:
+        // ACTION_TYPE
+        // INVOCATION
+        // CUBE_SOURCE
 
         public void populateImpl(
             XmlaResponse response,
@@ -3569,6 +3559,8 @@ TODO: see above
             List<Row> rows)
             throws XmlaException, SQLException
         {
+            final XmlaHandler.XmlaExtra extra =
+                handler.connectionFactory.getExtra();
             for (Catalog catalog
                 : catIter(connection, catNameCond(), catalogNameCond))
             {
@@ -3588,8 +3580,6 @@ TODO: see above
                         row.set(CatalogName.name, catalog.getName());
                         row.set(SchemaName.name, schema.getName());
                         row.set(CubeName.name, cube.getName());
-                        final XmlaHandler.XmlaExtra extra =
-                            getExtra(connection);
                         row.set(CubeType.name, extra.getCubeType(cube));
                         //row.set(CubeGuid.name, "");
                         //row.set(CreatedOn.name, "");
@@ -3756,12 +3746,10 @@ TODO: see above
                 Column.NOT_RESTRICTION,
                 Column.REQUIRED,
                 "The position of the dimension within the cube.");
-        /*
-         * SQL Server returns values:
-         *   MD_DIMTYPE_TIME (1)
-         *   MD_DIMTYPE_MEASURE (2)
-         *   MD_DIMTYPE_OTHER (3)
-         */
+        // SQL Server returns values:
+        //   MD_DIMTYPE_TIME (1)
+        //   MD_DIMTYPE_MEASURE (2)
+        //   MD_DIMTYPE_OTHER (3)
         private static final Column DimensionType =
             new Column(
                 "DIMENSION_TYPE",
@@ -3812,9 +3800,7 @@ TODO: see above
                 Column.OPTIONAL,
                 "A Boolean that indicates whether the dimension is "
                 + "write-enabled.");
-        /*
-         * SQL Server returns values: 0 or 1
-         */
+        // SQL Server returns values: 0 or 1
         private static final Column DimensionUniqueSettings =
             new Column(
                 "DIMENSION_UNIQUE_SETTINGS",
@@ -3933,17 +3919,9 @@ TODO: see above
             NamedList<Level> levels = firstHierarchy.getLevels();
             Level lastLevel = levels.get(levels.size() - 1);
 
-            /*
-            if override config setting is set
-                if approxRowCount has a value
-                    use it
-            else
-                                    do default
-            */
-
-            // Added by TWI to returned cached row numbers
-
-            int n = getExtra(connection).getLevelCardinality(lastLevel);
+            final XmlaHandler.XmlaExtra extra =
+                handler.connectionFactory.getExtra();
+            int n = extra.getLevelCardinality(lastLevel);
             row.set(DimensionCardinality.name, n + 1);
 
             // TODO: I think that this is just the dimension name
@@ -4109,7 +4087,8 @@ TODO: see above
             List<Row> rows)
             throws XmlaException, SQLException
         {
-            final XmlaHandler.XmlaExtra extra = getExtra(connection);
+            final XmlaHandler.XmlaExtra extra =
+                handler.connectionFactory.getExtra();
             for (Catalog catalog : catIter(connection, catNameCond())) {
                 // By definition, mondrian catalogs have only one
                 // schema. It is safe to use get(0)
@@ -4358,9 +4337,7 @@ TODO: see above
                 "Levels in this hierarchy.");
 
 
-        /*
-         * NOTE: This is non-standard, where did it come from?
-         */
+        // NOTE: This is non-standard, where did it come from?
         private static final Column ParentChild =
             new Column(
                 "PARENT_CHILD",
@@ -4455,7 +4432,8 @@ TODO: see above
                 // hierarchies.
                 return;
             }
-            final XmlaHandler.XmlaExtra extra = getExtra(connection);
+            final XmlaHandler.XmlaExtra extra =
+                handler.connectionFactory.getExtra();
             String desc = hierarchy.getDescription();
             if (desc == null) {
                 desc =
@@ -4820,7 +4798,8 @@ TODO: see above
             List<Row> rows)
             throws XmlaException, SQLException
         {
-            final XmlaHandler.XmlaExtra extra = getExtra(connection);
+            final XmlaHandler.XmlaExtra extra =
+                handler.connectionFactory.getExtra();
             String desc = level.getDescription();
             if (desc == null) {
                 desc =
@@ -5132,7 +5111,8 @@ TODO: see above
             row.set(MeasureCaption.name, member.getCaption());
             //row.set(MeasureGuid.name, "");
 
-            final XmlaHandler.XmlaExtra extra = getExtra(connection);
+            final XmlaHandler.XmlaExtra extra =
+                handler.connectionFactory.getExtra();
             row.set(MeasureAggregator.name, extra.getMeasureAggregator(member));
 
             // DATA_TYPE DBType best guess is string
@@ -5653,7 +5633,9 @@ TODO: see above
                 return;
             }
 
-            getExtra(connection).checkMemberOrdinal(member);
+            final XmlaHandler.XmlaExtra extra =
+                handler.connectionFactory.getExtra();
+            extra.checkMemberOrdinal(member);
 
             // Check whether the member is visible, otherwise do not dump.
             Boolean visible =
@@ -6116,7 +6098,7 @@ TODO: see above
             throws SQLException
         {
             final XmlaHandler.XmlaExtra extra =
-                getExtra(catalog.getMetaData().getConnection());
+                handler.connectionFactory.getExtra();
             for (Property property
                 : filter(extra.getLevelProperties(level), propertyNameCond))
             {

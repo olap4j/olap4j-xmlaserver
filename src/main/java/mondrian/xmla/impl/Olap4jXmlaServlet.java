@@ -215,6 +215,8 @@ public class Olap4jXmlaServlet extends DefaultXmlaServlet {
             new HashMap<String, BasicDataSource>();
         private final int idleConnectionsCleanupTimeoutMs;
         private final int maxPerUserConnectionCount;
+        private final XmlaHandler.XmlaExtra extra =
+            new XmlaHandler.XmlaExtraImpl();
 
         /**
          * Creates an Olap4jPoolingConnectionFactory.
@@ -334,6 +336,10 @@ public class Olap4jXmlaServlet extends DefaultXmlaServlet {
 
         public void endRequest(XmlaHandler.Request request) {
             // This XMLA server implementation does not track requests.
+        }
+
+        public XmlaHandler.XmlaExtra getExtra() {
+            return extra;
         }
     }
 

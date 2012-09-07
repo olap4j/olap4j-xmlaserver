@@ -67,44 +67,6 @@ public class XmlaHandler {
     final ConnectionFactory connectionFactory;
     private final String prefix;
 
-    public static XmlaExtra getExtra(OlapConnection connection) {
-        try {
-            final XmlaExtra extra = connection.unwrap(XmlaExtra.class);
-            if (extra != null) {
-                return extra;
-            }
-        } catch (SQLException e) {
-            // Connection cannot provide an XmlaExtra. Fall back and give a
-            // default implementation.
-        } catch (UndeclaredThrowableException ute) {
-            //
-            // Note: this is necessary because we use a dynamic proxy for the
-            // connection.
-            // I could not catch and un-wrap the Undeclared Throwable within
-            // the proxy.
-            // The exception comes out here and I couldn't find any better
-            // ways to deal with it.
-            //
-            // The undeclared throwable contains an Invocation Target Exception
-            // which in turns contains the real exception thrown by the "unwrap"
-            // method, for example OlapException.
-            //
-
-            Throwable cause = ute.getCause();
-            if (cause instanceof InvocationTargetException) {
-                cause = cause.getCause();
-            }
-
-            // this maintains the original behaviour: don't catch exceptions
-            // that are not subclasses of SQLException
-
-            if (! (cause instanceof SQLException)) {
-                throw ute;
-            }
-        }
-        return new XmlaExtraImpl();
-    }
-
     /**
      * Returns a new OlapConnection opened with the credentials specified in the
      * XMLA request or an existing connection if one can be found associated
@@ -1352,7 +1314,7 @@ public class XmlaHandler {
             connection =
                 getConnection(request, Collections.<String, String>emptyMap());
             statement = connection.createStatement();
-            final XmlaExtra extra = getExtra(connection);
+            final XmlaHandler.XmlaExtra extra = connectionFactory.getExtra();
             final boolean enableRowCount = extra.isTotalCountEnabled();
             final int[] rowCountSlot = enableRowCount ? new int[]{0} : null;
             resultSet =
@@ -1622,10 +1584,8 @@ public class XmlaHandler {
             return XSD_INT;
         case Types.NUMERIC:
         case Types.DECIMAL:
-            /*
-             * Oracle reports all numbers as NUMERIC. We check
-             * the scale of the column and pick the right XSD type.
-             */
+            // Oracle reports all numbers as NUMERIC. We check
+            // the scale of the column and pick the right XSD type.
             if (scale == 0) {
                 return XSD_INT;
             } else {
@@ -1669,7 +1629,8 @@ public class XmlaHandler {
         try {
             connection =
                 getConnection(request, Collections.<String, String>emptyMap());
-            getExtra(connection).setPreferList(connection);
+            final XmlaHandler.XmlaExtra extra = connectionFactory.getExtra();
+            extra.setPreferList(connection);
             try {
                 statement = connection.prepareOlapStatement(mdx);
             } catch (XmlaException ex) {
@@ -1692,6 +1653,7 @@ public class XmlaHandler {
                 if (format == Format.Multidimensional) {
                     dataSet =
                         new MDDataSet_Multidimensional(
+                            extra,
                             cellSet,
                             content != Content.DataIncludeDefaultSlicer,
                             responseMimeType
@@ -1864,6 +1826,7 @@ public class XmlaHandler {
         private XmlaExtra extra;
 
         protected MDDataSet_Multidimensional(
+            XmlaExtra extra,
             CellSet cellSet,
             boolean omitDefaultSlicerInfo,
             boolean json)
@@ -1872,7 +1835,7 @@ public class XmlaHandler {
             super(cellSet);
             this.omitDefaultSlicerInfo = omitDefaultSlicerInfo;
             this.json = json;
-            this.extra = getExtra(cellSet.getStatement().getConnection());
+            this.extra = extra;
         }
 
         public void unparse(SaxWriter writer)
@@ -3112,7 +3075,10 @@ public class XmlaHandler {
      * Default implementation of {@link mondrian.xmla.XmlaHandler.XmlaExtra}.
      * Connections based on mondrian's olap4j driver can do better.
      */
-    private static class XmlaExtraImpl implements XmlaExtra {
+    public static class XmlaExtraImpl implements XmlaExtra {
+        public XmlaExtraImpl() {
+        }
+
         public ResultSet executeDrillthrough(
             OlapStatement olapStatement,
             String mdx,
@@ -3131,7 +3097,7 @@ public class XmlaHandler {
             return new Date();
         }
 
-        public int getLevelCardinality(Level level) {
+        public int getLevelCardinality(Level level) throws OlapException {
             return level.getCardinality();
         }
 
@@ -3143,7 +3109,9 @@ public class XmlaHandler {
             // no function definitions
         }
 
-        public int getHierarchyCardinality(Hierarchy hierarchy) {
+        public int getHierarchyCardinality(Hierarchy hierarchy)
+            throws OlapException
+        {
             int cardinality = 0;
             for (Level level : hierarchy.getLevels()) {
                 cardinality += level.getCardinality();
@@ -3164,7 +3132,7 @@ public class XmlaHandler {
                 .MDMEASURE_AGGR_UNKNOWN;
         }
 
-        public void checkMemberOrdinal(Member member) {
+        public void checkMemberOrdinal(Member member) throws OlapException {
             // nothing to do
         }
 
@@ -3222,7 +3190,9 @@ public class XmlaHandler {
                     modes));
         }
 
-        public Map<String, Object> getAnnotationMap(MetadataElement element) {
+        public Map<String, Object> getAnnotationMap(MetadataElement element)
+            throws SQLException
+        {
             return Collections.emptyMap();
         }
 
@@ -3314,6 +3284,11 @@ public class XmlaHandler {
          * {@link #startRequest(XmlaRequest, org.olap4j.OlapConnection)}
          */
         void endRequest(Request request);
+
+        /**
+         * Creates a callback for extra functionality.
+         */
+        XmlaExtra getExtra();
     }
 
     public interface Request {

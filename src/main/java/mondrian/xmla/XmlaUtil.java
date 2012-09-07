@@ -335,6 +335,10 @@ way too noisy
                 public void endRequest(XmlaHandler.Request request) {
                     // nothing
                 }
+
+                public XmlaHandler.XmlaExtra getExtra() {
+                    return new XmlaHandler.XmlaExtraImpl();
+                }
             };
         final XmlaRequest request = new XmlaRequest() {
             public Method getMethod() {
