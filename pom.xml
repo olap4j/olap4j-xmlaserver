@@ -92,12 +92,22 @@
     </plugins>
   </reporting>
 
+  <distributionManagement>
+    <repository>
+      <uniqueVersion>false</uniqueVersion>
+      <id>pentaho</id>
+      <name>Pentaho Open Repository</name>
+      <url>http://repository.pentaho.org/artifactory/pentaho</url>
+      <layout>default</layout>
+    </repository>
+  </distributionManagement>
+
   <repositories>
     <repository>
       <id>pentaho</id>
       <url>http://repo.pentaho.org/artifactory/repo/</url>
       <snapshots>
-        <enabled>false</enabled>
+        <enabled>true</enabled>
       </snapshots>
     </repository>
   </repositories>
