@@ -10,6 +10,7 @@
 */
 package mondrian.xmla;
 
+import mondrian.xmla.XmlaHandler.XmlaExtra;
 import mondrian.xmla.impl.DefaultXmlaResponse;
 
 import org.olap4j.xmla.server.impl.Util;
@@ -337,7 +338,11 @@ way too noisy
                 }
 
                 public XmlaHandler.XmlaExtra getExtra() {
-                    return new XmlaHandler.XmlaExtraImpl();
+                    try {
+                        return connection.unwrap(XmlaHandler.XmlaExtra.class);
+                    } catch (SQLException e) {
+                        throw new RuntimeException(e);
+                    }
                 }
             };
         final XmlaRequest request = new XmlaRequest() {

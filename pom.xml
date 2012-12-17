@@ -5,7 +5,7 @@
   <!-- The basics. -->
   <groupId>org.olap4j</groupId>
   <artifactId>olap4j-xmlaserver</artifactId>
-  <version>0.1-SNAPSHOT</version>
+  <version>0.0.1-SNAPSHOT</version>
   <packaging>jar</packaging>
 
   <!-- More project information. -->
@@ -67,7 +67,17 @@
     <dependency>
       <groupId>org.olap4j</groupId>
       <artifactId>olap4j</artifactId>
-      <version>1.0.1.500</version>
+      <version>1.0.1-SNAPSHOT</version>
+      <exclusions>
+        <exclusion>
+          <artifactId>rt-java6</artifactId>
+          <groupId>net.java.openjdk</groupId>
+        </exclusion>
+        <exclusion>
+          <artifactId>rt-jdk1.5</artifactId>
+          <groupId>com.sun</groupId>
+        </exclusion>
+      </exclusions>
     </dependency>
     <dependency>
       <groupId>javax.servlet</groupId>

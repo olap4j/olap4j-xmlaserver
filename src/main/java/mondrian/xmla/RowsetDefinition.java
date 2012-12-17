@@ -20,10 +20,6 @@ import org.olap4j.impl.Olap4jUtil;
 import org.olap4j.mdx.IdentifierNode;
 import org.olap4j.mdx.IdentifierSegment;
 import org.olap4j.metadata.*;
-import org.olap4j.metadata.Cube;
-import org.olap4j.metadata.Dimension;
-import org.olap4j.metadata.Hierarchy;
-import org.olap4j.metadata.Level;
 import org.olap4j.metadata.Member;
 import org.olap4j.metadata.Member.TreeOp;
 import org.olap4j.metadata.NamedSet;
@@ -6406,9 +6402,9 @@ TODO: see above
         public NamedList<Hierarchy> getHierarchies() {
             final NamedList<Hierarchy> hierarchyList =
                 new ArrayNamedListImpl<Hierarchy>() {
-                    protected String getName(Hierarchy hierarchy) {
-                        return hierarchy.getName();
-                    }
+                public String getName(Object o) {
+                    return ((Hierarchy) o).getName();
+                }
                 };
             for (Dimension dimension : getDimensions()) {
                 hierarchyList.addAll(dimension.getHierarchies());
