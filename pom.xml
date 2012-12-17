@@ -11,7 +11,7 @@
   <!-- More project information. -->
   <name>olap4j-xmlaserver</name>
   <description>XML for Analysis (XMLA) server based upon olap4j connections</description>
-  <url>http://github.com/julianhyde/olap4j-xmlaserver</url>
+  <url>http://github.com/olap4j/olap4j-xmlaserver</url>
   <inceptionYear>2012</inceptionYear>
   <organization>
     <name>olap4j</name>
@@ -49,7 +49,7 @@
   <scm>
     <connection>scm:git:git://github.com/julianhyde/olap4j-xmlaserver.git</connection>
     <developerConnection>scm:git:git@github.com:julianhyde/olap4j-xmlaserver.git</developerConnection>
-    <url>http://github.com/julianhyde/olap4j-xmlaserver/tree/master</url>
+    <url>http://github.com/olap4j/olap4j-xmlaserver/tree/master</url>
   </scm>
 
   <!-- Dependencies. -->
@@ -68,16 +68,6 @@
       <groupId>org.olap4j</groupId>
       <artifactId>olap4j</artifactId>
       <version>1.0.1-SNAPSHOT</version>
-      <exclusions>
-        <exclusion>
-          <artifactId>rt-java6</artifactId>
-          <groupId>net.java.openjdk</groupId>
-        </exclusion>
-        <exclusion>
-          <artifactId>rt-jdk1.5</artifactId>
-          <groupId>com.sun</groupId>
-        </exclusion>
-      </exclusions>
     </dependency>
     <dependency>
       <groupId>javax.servlet</groupId>
@@ -114,7 +104,7 @@
       <url>http://repo.pentaho.org/artifactory/repo</url>
       <layout>default</layout>
       <snapshots>
-        <enabled>true</enabled>
+        <enabled>false</enabled>
       </snapshots>
     </repository>
   </repositories>
