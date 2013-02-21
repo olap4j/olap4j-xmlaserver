@@ -187,24 +187,6 @@ public class DefaultXmlaRequest
             XmlaUtil.filterChildElements(
                 discoverRoot,
                 NS_XMLA,
-                "Restrictions");
-        if (childElems.length != 1) {
-            StringBuilder buf = new StringBuilder(100);
-            buf.append(MSG_INVALID_XMLA);
-            buf.append(": Wrong number of Restrictions elements: ");
-            buf.append(childElems.length);
-            throw new XmlaException(
-                CLIENT_FAULT_FC,
-                HSB_BAD_RESTRICTIONS_CODE,
-                HSB_BAD_RESTRICTIONS_FAULT_FS,
-                Util.newError(buf.toString()));
-        }
-        initRestrictions(childElems[0]); // <Restriciotns><RestrictionList>
-
-        childElems =
-            XmlaUtil.filterChildElements(
-                discoverRoot,
-                NS_XMLA,
                 "Properties");
         if (childElems.length != 1) {
             StringBuilder buf = new StringBuilder(100);
@@ -218,6 +200,24 @@ public class DefaultXmlaRequest
                 Util.newError(buf.toString()));
         }
         initProperties(childElems[0]); // <Properties><PropertyList>
+
+        childElems =
+            XmlaUtil.filterChildElements(
+                discoverRoot,
+                NS_XMLA,
+                "Restrictions");
+        if (childElems.length != 1) {
+            StringBuilder buf = new StringBuilder(100);
+            buf.append(MSG_INVALID_XMLA);
+            buf.append(": Wrong number of Restrictions elements: ");
+            buf.append(childElems.length);
+            throw new XmlaException(
+                CLIENT_FAULT_FC,
+                HSB_BAD_RESTRICTIONS_CODE,
+                HSB_BAD_RESTRICTIONS_FAULT_FS,
+                Util.newError(buf.toString()));
+        }
+        initRestrictions(childElems[0]); // <Restriciotns><RestrictionList>
     }
 
     private void initExecute(Element executeRoot) throws XmlaException {
@@ -311,6 +311,31 @@ public class DefaultXmlaRequest
                 HSB_BAD_RESTRICTION_LIST_FAULT_FS,
                 Util.newError(buf.toString()));
         }
+
+        // If there is a Catalog property,
+        // we have to consider it a constraint as well.
+        String key =
+            org.olap4j.metadata.XmlaConstants
+                .Literal.CATALOG_NAME.name();
+
+        if (this.properties.containsKey(key)
+            && !restrictions.containsKey(key))
+        {
+            List<String> values;
+            values = new ArrayList<String>();
+            restrictions.put(this.properties.get(key), values);
+
+            if (LOGGER.isDebugEnabled()) {
+                LOGGER.debug(
+                    "DefaultXmlaRequest.initRestrictions: "
+                    + " key=\""
+                    + key
+                    + "\", value=\""
+                    + this.properties.get(key)
+                    + "\"");
+            }
+        }
+
         this.restrictions = (Map) Collections.unmodifiableMap(restrictions);
     }
 

@@ -2161,7 +2161,9 @@ public enum RowsetDefinition {
         {
             final XmlaHandler.XmlaExtra extra =
                 handler.connectionFactory.getExtra();
-            for (Catalog catalog : catIter(connection, catalogNameCond)) {
+            for (Catalog catalog
+                : catIter(connection, catalogNameCond, catNameCond()))
+            {
                 for (Schema schema : catalog.getSchemas()) {
                     Row row = new Row();
                     row.set(CatalogName.name, catalog.getName());
@@ -2337,7 +2339,9 @@ public enum RowsetDefinition {
             List<Row> rows)
             throws XmlaException, OlapException
         {
-            for (Catalog catalog : catIter(connection, tableCatalogCond)) {
+            for (Catalog catalog
+                : catIter(connection, tableCatalogCond, catNameCond()))
+            {
                 // By definition, mondrian catalogs have only one
                 // schema. It is safe to use get(0)
                 final Schema schema = catalog.getSchemas().get(0);
@@ -2890,7 +2894,9 @@ TODO: see above
             List<Row> rows)
             throws XmlaException, OlapException
         {
-            for (Catalog catalog : catIter(connection, catalogNameCond)) {
+            for (Catalog catalog
+                : catIter(connection, catalogNameCond, catNameCond()))
+            {
                 for (Schema schema : catalog.getSchemas()) {
                     Row row = new Row();
                     row.set(CatalogName.name, catalog.getName());
