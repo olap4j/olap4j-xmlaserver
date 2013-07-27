@@ -14,6 +14,7 @@ import mondrian.xmla.impl.DefaultXmlaResponse;
 
 import org.olap4j.xmla.*;
 
+import org.olap4j.xmla.Enumeration;
 import org.olap4j.xmla.server.impl.Util;
 
 import org.olap4j.OlapConnection;

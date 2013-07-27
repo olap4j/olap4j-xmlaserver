@@ -1,6 +1,6 @@
 package org.olap4j.xmla;
 
-import mondrian.xmla.Enumeration;
+import org.olap4j.xmla.Enumeration;
 
 import java.util.List;
 

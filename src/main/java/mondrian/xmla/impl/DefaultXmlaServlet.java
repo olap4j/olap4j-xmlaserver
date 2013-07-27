@@ -13,6 +13,7 @@ import mondrian.xmla.*;
 
 import org.olap4j.impl.Olap4jUtil;
 
+import org.olap4j.xmla.Enumeration;
 import org.w3c.dom.*;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;

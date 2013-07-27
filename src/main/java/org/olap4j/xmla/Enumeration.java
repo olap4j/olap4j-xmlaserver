@@ -1,30 +1,14 @@
-/*
-// This software is subject to the terms of the Eclipse Public License v1.0
-// Agreement, available at the following URL:
-// http://www.eclipse.org/legal/epl-v10.html.
-// You must accept the terms of that agreement to use this software.
-//
-// Copyright (C) 2003-2005 Julian Hyde
-// Copyright (C) 2005-2013 Pentaho
-// All Rights Reserved.
-//
-// jhyde, May 2, 2003
-*/
-package mondrian.xmla;
+package org.olap4j.xmla;
 
 import org.olap4j.impl.UnmodifiableArrayMap;
 import org.olap4j.metadata.XmlaConstant;
 import org.olap4j.metadata.XmlaConstants;
-import org.olap4j.xmla.XmlaType;
 
 import java.util.List;
 import java.util.Map;
 
 /**
  * Contains inner classes which define enumerations used in XML for Analysis.
- *
- * @author jhyde
- * @since May 2, 2003
  */
 public class Enumeration {
     public final String name;

@@ -11,6 +11,7 @@ package mondrian.xmla.impl;
 
 import mondrian.xmla.*;
 
+import org.olap4j.xmla.Enumeration;
 import org.olap4j.xmla.server.impl.Util;
 
 import java.io.OutputStream;

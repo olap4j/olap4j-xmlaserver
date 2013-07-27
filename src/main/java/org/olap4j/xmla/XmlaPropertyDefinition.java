@@ -149,7 +149,7 @@ public enum XmlaPropertyDefinition {
 
     // Mondrian-specific extension to XMLA.
     /**
-     * @see mondrian.xmla.Enumeration.ResponseMimeType
+     * @see Enumeration.ResponseMimeType
      */
     ResponseMimeType(
         XmlaType.String,

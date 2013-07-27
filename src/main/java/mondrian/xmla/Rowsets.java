@@ -21,6 +21,7 @@ import org.olap4j.metadata.Member.TreeOp;
 import org.olap4j.metadata.XmlaConstants;
 import org.olap4j.xmla.*;
 
+import org.olap4j.xmla.Enumeration;
 import org.olap4j.xmla.server.impl.Composite;
 import org.olap4j.xmla.server.impl.Util;
 

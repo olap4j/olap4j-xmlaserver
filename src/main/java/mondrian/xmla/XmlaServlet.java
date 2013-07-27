@@ -12,11 +12,13 @@ package mondrian.xmla;
 
 import org.apache.log4j.Logger;
 
+import org.olap4j.xmla.*;
 import org.w3c.dom.Element;
 
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.util.*;
+import java.util.Enumeration;
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
 import javax.servlet.http.*;
@@ -153,8 +155,8 @@ public abstract class XmlaServlet
         byte[][] responseSoapParts = new byte[2][];
 
         Phase phase = Phase.VALIDATE_HTTP_HEAD;
-        Enumeration.ResponseMimeType mimeType =
-            Enumeration.ResponseMimeType.SOAP;
+        org.olap4j.xmla.Enumeration.ResponseMimeType mimeType =
+            org.olap4j.xmla.Enumeration.ResponseMimeType.SOAP;
 
         try {
             if (charEncoding != null) {
@@ -238,7 +240,7 @@ public abstract class XmlaServlet
                             + " response content type. Allowed values:"
                             + " text/xml, application/xml, application/json.");
                     }
-                    if (mimeType != Enumeration.ResponseMimeType.SOAP) {
+                    if (mimeType != org.olap4j.xmla.Enumeration.ResponseMimeType.SOAP) {
                         response.setContentType(mimeType.getMimeType());
                     }
                 }
@@ -328,7 +330,7 @@ public abstract class XmlaServlet
             }
 
             mimeType =
-                (Enumeration.ResponseMimeType) context.get(CONTEXT_MIME_TYPE);
+                (org.olap4j.xmla.Enumeration.ResponseMimeType) context.get(CONTEXT_MIME_TYPE);
 
             phase = Phase.CALLBACK_POST_ACTION;
 
@@ -416,7 +418,7 @@ public abstract class XmlaServlet
     protected abstract void marshallSoapMessage(
         HttpServletResponse response,
         byte[][] responseSoapParts,
-        Enumeration.ResponseMimeType responseMimeType)
+        org.olap4j.xmla.Enumeration.ResponseMimeType responseMimeType)
         throws XmlaException;
 
     /**

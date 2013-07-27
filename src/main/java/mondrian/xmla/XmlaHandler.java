@@ -18,6 +18,7 @@ import org.olap4j.metadata.*;
 import org.olap4j.metadata.Property.StandardCellProperty;
 import org.olap4j.metadata.Property.StandardMemberProperty;
 import org.olap4j.xmla.*;
+import org.olap4j.xmla.Enumeration;
 
 import org.olap4j.xmla.server.impl.CompositeList;
 import org.olap4j.xmla.server.impl.Util;
