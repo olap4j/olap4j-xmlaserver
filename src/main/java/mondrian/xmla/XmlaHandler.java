@@ -12,16 +12,17 @@ package mondrian.xmla;
 
 import mondrian.xmla.impl.DefaultSaxWriter;
 
-import org.olap4j.xmla.server.impl.CompositeList;
-import org.olap4j.xmla.server.impl.Util;
-
-import org.apache.log4j.Logger;
-
 import org.olap4j.*;
 import org.olap4j.impl.Olap4jUtil;
 import org.olap4j.metadata.*;
 import org.olap4j.metadata.Property.StandardCellProperty;
 import org.olap4j.metadata.Property.StandardMemberProperty;
+import org.olap4j.xmla.*;
+
+import org.olap4j.xmla.server.impl.CompositeList;
+import org.olap4j.xmla.server.impl.Util;
+
+import org.apache.log4j.Logger;
 
 import org.xml.sax.SAXException;
 
@@ -105,12 +106,12 @@ public class XmlaHandler {
         final String databaseName =
            request
                .getProperties()
-                   .get(PropertyDefinition.DataSourceInfo.name());
+                   .get(XmlaPropertyDefinition.DataSourceInfo.name());
 
         String catalogName =
             request
                 .getProperties()
-                    .get(PropertyDefinition.Catalog.name());
+                    .get(XmlaPropertyDefinition.Catalog.name());
 
         if (catalogName == null
             && request.getMethod() == Method.DISCOVER
@@ -663,7 +664,7 @@ public class XmlaHandler {
             }
         } else {
             final String formatName =
-                properties.get(PropertyDefinition.Format.name());
+                properties.get(XmlaPropertyDefinition.Format.name());
             if (formatName != null) {
                 Format format = getFormat(request, null);
                 if (format != Format.Multidimensional
@@ -675,7 +676,7 @@ public class XmlaHandler {
                 }
             }
             final String axisFormatName =
-                properties.get(PropertyDefinition.AxisFormat.name());
+                properties.get(XmlaPropertyDefinition.AxisFormat.name());
             if (axisFormatName != null) {
                 AxisFormat axisFormat = Util.lookup(
                     AxisFormat.class, axisFormatName, null);
@@ -701,7 +702,7 @@ public class XmlaHandler {
 
         // Default value is SchemaData, or Data for JSON responses.
         final String contentName =
-            properties.get(PropertyDefinition.Content.name());
+            properties.get(XmlaPropertyDefinition.Content.name());
         Content content = Util.lookup(
             Content.class,
             contentName,
@@ -729,7 +730,7 @@ public class XmlaHandler {
                 request.isDrillThrough()
                 || Format.Tabular.name().equals(
                     request.getProperties().get(
-                        PropertyDefinition.Format.name()));
+                        XmlaPropertyDefinition.Format.name()));
             writer.startElement(
                 "root",
                 "xmlns",
@@ -798,7 +799,8 @@ public class XmlaHandler {
      *
      * @param writer SAX writer
      * @param settype rowset or dataset?
-     * @see RowsetDefinition#writeRowsetXmlSchema(SaxWriter)
+     *
+     * @see Rowset#writeRowsetXmlSchema(SaxWriter)
      */
     static void writeDatasetXmlSchema(SaxWriter writer, SetType settype) {
         String setNsXmla =
@@ -1325,12 +1327,12 @@ public class XmlaHandler {
 
         final Map<String, String> properties = request.getProperties();
         String tabFields =
-            properties.get(PropertyDefinition.TableFields.name());
+            properties.get(XmlaPropertyDefinition.TableFields.name());
         if (tabFields != null && tabFields.length() == 0) {
             tabFields = null;
         }
         final String advancedFlag =
-            properties.get(PropertyDefinition.AdvancedFlag.name());
+            properties.get(XmlaPropertyDefinition.AdvancedFlag.name());
         final boolean advanced = Boolean.parseBoolean(advancedFlag);
         OlapConnection connection = null;
         OlapStatement statement = null;
@@ -1568,7 +1570,7 @@ public class XmlaHandler {
                     "base", XSD_STRING);
                 writer.element(
                     "xsd:pattern",
-                    "value", RowsetDefinition.UUID_PATTERN);
+                    "value", Rowset.UUID_PATTERN);
                 writer.endElement(); // xsd:restriction
                 writer.endElement(); // xsd:simpleType
             }
@@ -1731,7 +1733,7 @@ public class XmlaHandler {
     {
         final String formatName =
             request.getProperties().get(
-                PropertyDefinition.Format.name());
+                XmlaPropertyDefinition.Format.name());
         return Util.lookup(
             Format.class,
             formatName, defaultValue);
@@ -1740,7 +1742,7 @@ public class XmlaHandler {
     private static Content getContent(XmlaRequest request) {
         final String contentName =
             request.getProperties().get(
-                PropertyDefinition.Content.name());
+                XmlaPropertyDefinition.Content.name());
         return Util.lookup(
             Content.class,
             contentName,
@@ -1753,7 +1755,7 @@ public class XmlaHandler {
         Enumeration.ResponseMimeType mimeType =
             Enumeration.ResponseMimeType.MAP.get(
                 request.getProperties().get(
-                    PropertyDefinition.ResponseMimeType.name()));
+                    XmlaPropertyDefinition.ResponseMimeType.name()));
         if (mimeType == null) {
             mimeType = Enumeration.ResponseMimeType.SOAP;
         }
@@ -2041,11 +2043,11 @@ public class XmlaHandler {
             Datatype datatype = property.getDatatype();
             switch (datatype) {
             case UNSIGNED_INTEGER:
-                return RowsetDefinition.Type.UnsignedInteger.columnType;
+                return XmlaType.UnsignedInteger.columnType;
             case BOOLEAN:
-                return RowsetDefinition.Type.Boolean.columnType;
+                return XmlaType.Boolean.columnType;
             default:
-                return RowsetDefinition.Type.String.columnType;
+                return XmlaType.String.columnType;
             }
         }
 
@@ -2082,25 +2084,24 @@ public class XmlaHandler {
                 writer.startSequence("Tuples", "Tuple");
                 writer.startSequence("Tuple", "Member");
 
-                Map<String, Integer> memberMap = new HashMap<String, Integer>();
-                Member positionMember;
-                CellSetAxis slicerAxis = cellSet.getFilterAxis();
+                final Map<String, Integer> memberMap =
+                    new HashMap<String, Integer>();
+                final CellSetAxis slicerAxis = cellSet.getFilterAxis();
                 final List<Position> slicerPositions =
                     slicerAxis.getPositions();
-                if (slicerPositions != null
-                    && slicerPositions.size() > 0)
-                {
+                final List<Member> slicerMembers;
+                if (slicerPositions.size() > 0) {
                     final Position pos0 = slicerPositions.get(0);
                     int i = 0;
                     for (Member member : pos0.getMembers()) {
                         memberMap.put(member.getHierarchy().getName(), i++);
                     }
+                    slicerMembers = slicerPositions.get(0).getMembers();
+                } else {
+                    slicerMembers = Collections.emptyList();
                 }
 
-                final List<Member> slicerMembers =
-                    slicerPositions.isEmpty()
-                        ? Collections.<Member>emptyList()
-                        : slicerPositions.get(0).getMembers();
+                Member positionMember;
                 for (Hierarchy hierarchy : hierarchies) {
                     // Find which member is on the slicer.
                     // If it's not explicitly there, use the default member.
@@ -2665,7 +2666,7 @@ public class XmlaHandler {
                     "base", XSD_STRING);
                 writer.element(
                     "xsd:pattern",
-                    "value", RowsetDefinition.UUID_PATTERN);
+                    "value", Rowset.UUID_PATTERN);
                 writer.endElement(); // xsd:restriction
                 writer.endElement(); // xsd:simpleType
             }
@@ -2787,7 +2788,7 @@ public class XmlaHandler {
     {
         final RowsetDefinition rowsetDefinition =
             RowsetDefinition.valueOf(request.getRequestType());
-        Rowset rowset = rowsetDefinition.getRowset(request, this);
+        Rowset rowset = Rowsets.create(rowsetDefinition, request, this);
 
         Format format = getFormat(request, Format.Tabular);
         if (format != Format.Tabular) {
@@ -2818,7 +2819,7 @@ public class XmlaHandler {
         switch (content) {
         case Schema:
         case SchemaData:
-            rowset.rowsetDefinition.writeRowsetXmlSchema(writer);
+            rowset.writeRowsetXmlSchema(writer);
             break;
         }
 
@@ -3063,7 +3064,7 @@ public class XmlaHandler {
          *
          * @return Value of the property
          */
-        String getPropertyValue(PropertyDefinition propertyDefinition);
+        String getPropertyValue(XmlaPropertyDefinition propertyDefinition);
 
         /**
          * Returns a list of MDX keywords.
@@ -3158,8 +3159,7 @@ public class XmlaHandler {
         }
 
         public int getMeasureAggregator(Member member) {
-            return RowsetDefinition.MdschemaMeasuresRowset
-                .MDMEASURE_AGGR_UNKNOWN;
+            return Rowsets.MdschemaMeasuresRowset.MDMEASURE_AGGR_UNKNOWN;
         }
 
         public void checkMemberOrdinal(Member member) throws OlapException {
@@ -3181,7 +3181,7 @@ public class XmlaHandler {
         }
 
         public String getCubeType(Cube cube) {
-            return RowsetDefinition.MdschemaCubesRowset.MD_CUBTYPE_CUBE;
+            return Rowsets.MdschemaCubesRowset.MD_CUBTYPE_CUBE;
         }
 
         public boolean isLevelUnique(Level level) {
@@ -3238,7 +3238,9 @@ public class XmlaHandler {
             return false;
         }
 
-        public String getPropertyValue(PropertyDefinition propertyDefinition) {
+        public String getPropertyValue(
+            XmlaPropertyDefinition propertyDefinition)
+        {
             return propertyDefinition.value;
         }
 

@@ -5,13 +5,14 @@
 // You must accept the terms of that agreement to use this software.
 //
 // Copyright (C) 2003-2005 Julian Hyde
-// Copyright (C) 2005-2012 Pentaho
+// Copyright (C) 2005-2013 Pentaho
 // All Rights Reserved.
 */
 package mondrian.xmla;
 
-import mondrian.xmla.XmlaHandler.XmlaExtra;
 import mondrian.xmla.impl.DefaultXmlaResponse;
+
+import org.olap4j.xmla.*;
 
 import org.olap4j.xmla.server.impl.Util;
 
@@ -391,7 +392,8 @@ way too noisy
             }
         };
         final Rowset rowset =
-            rowsetDefinition.getRowset(
+            Rowsets.create(
+                rowsetDefinition,
                 request,
                 new XmlaHandler(
                     connectionFactory,
@@ -415,12 +417,12 @@ way too noisy
             connection,
             rowList);
         MetadataRowset result = new MetadataRowset();
-        final List<RowsetDefinition.Column> colDefs =
-            new ArrayList<RowsetDefinition.Column>();
-        for (RowsetDefinition.Column columnDefinition
-            : rowsetDefinition.columnDefinitions)
+        final List<Column> colDefs =
+            new ArrayList<Column>();
+        for (Column columnDefinition
+            : rowsetDefinition.columns)
         {
-            if (columnDefinition.type == RowsetDefinition.Type.Rowset) {
+            if (columnDefinition.type == XmlaType.Rowset) {
                 // olap4j does not support the extended columns, e.g.
                 // Cube.Dimensions
                 continue;
@@ -430,7 +432,7 @@ way too noisy
         for (Rowset.Row row : rowList) {
             Object[] values = new Object[colDefs.size()];
             int k = -1;
-            for (RowsetDefinition.Column colDef : colDefs) {
+            for (Column colDef : colDefs) {
                 Object o = row.get(colDef.name);
                 if (o instanceof List) {
                     o = toString((List<String>) o);
@@ -441,7 +443,7 @@ way too noisy
             }
             result.rowList.add(Arrays.asList(values));
         }
-        for (RowsetDefinition.Column colDef : colDefs) {
+        for (Column colDef : colDefs) {
             String columnName = colDef.name;
             if (LOWERCASE_PATTERN.matcher(columnName).matches()) {
                 columnName = Util.camelToUpper(columnName);
@@ -510,7 +512,7 @@ way too noisy
     public static boolean shouldEmitInvisibleMembers(XmlaRequest request) {
         final String value =
             request.getProperties().get(
-                PropertyDefinition.EmitInvisibleMembers.name());
+                XmlaPropertyDefinition.EmitInvisibleMembers.name());
         return Boolean.parseBoolean(value);
     }
 

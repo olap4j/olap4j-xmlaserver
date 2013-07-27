@@ -1,14 +1,4 @@
-/*
-// This software is subject to the terms of the Eclipse Public License v1.0
-// Agreement, available at the following URL:
-// http://www.eclipse.org/legal/epl-v10.html.
-// You must accept the terms of that agreement to use this software.
-//
-// Copyright (C) 2003-2005 Julian Hyde
-// Copyright (C) 2005-2012 Pentaho
-// All Rights Reserved.
-*/
-package mondrian.xmla;
+package org.olap4j.xmla;
 
 import org.olap4j.impl.Olap4jUtil;
 import org.olap4j.metadata.XmlaConstants;
@@ -16,14 +6,11 @@ import org.olap4j.metadata.XmlaConstants;
 import java.util.Set;
 
 /**
- * Defines an XML for Analysis Property.
- *
- * @author jhyde
- * @since May 2, 2003
+ * Enumeration of standard XML for Analysis Properties.
  */
-public enum PropertyDefinition {
+public enum XmlaPropertyDefinition {
     AxisFormat(
-        RowsetDefinition.Type.Enumeration,
+        XmlaType.Enumeration,
         Olap4jUtil.enumSetAllOf(XmlaConstants.AxisFormat.class),
         XmlaConstants.Access.Write,
         "",
@@ -31,7 +18,7 @@ public enum PropertyDefinition {
         "Determines the format used within an MDDataSet result set to describe the axes of the multidimensional dataset. This property can have the values listed in the following table: TupleFormat (default), ClusterFormat, CustomFormat."),
 
     BeginRange(
-        RowsetDefinition.Type.Integer,
+        XmlaType.Integer,
         null,
         XmlaConstants.Access.Write,
         "-1",
@@ -41,7 +28,7 @@ public enum PropertyDefinition {
         + "The default value for this property is -1."),
 
     Catalog(
-        RowsetDefinition.Type.String,
+        XmlaType.String,
         null,
         XmlaConstants.Access.ReadWrite,
         "",
@@ -51,7 +38,7 @@ public enum PropertyDefinition {
         + "The default value for this property is an empty string."),
 
     Content(
-        RowsetDefinition.Type.EnumString,
+        XmlaType.EnumString,
         Olap4jUtil.enumSetAllOf(XmlaConstants.Content.class),
         XmlaConstants.Access.Write,
         XmlaConstants.Content.DEFAULT.name(),
@@ -63,7 +50,7 @@ public enum PropertyDefinition {
         + "SchemaData: Returns both the schema information as well as the data."),
 
     Cube(
-        RowsetDefinition.Type.String,
+        XmlaType.String,
         null,
         XmlaConstants.Access.ReadWrite,
         "",
@@ -71,7 +58,7 @@ public enum PropertyDefinition {
         "The cube context for the Command parameter. If the command contains a cube name (such as an MDX FROM clause) the setting of this property is ignored."),
 
     DataSourceInfo(
-        RowsetDefinition.Type.String,
+        XmlaType.String,
         null,
         XmlaConstants.Access.ReadWrite,
         "",
@@ -80,7 +67,7 @@ public enum PropertyDefinition {
 
     // Mondrian-specific extension to XMLA.
     Deep(
-        RowsetDefinition.Type.Boolean,
+        XmlaType.Boolean,
         null,
         XmlaConstants.Access.ReadWrite,
         "",
@@ -91,7 +78,7 @@ public enum PropertyDefinition {
 
     // Mondrian-specific extension to XMLA.
     EmitInvisibleMembers(
-        RowsetDefinition.Type.Boolean,
+        XmlaType.Boolean,
         null,
         XmlaConstants.Access.ReadWrite,
         "",
@@ -100,7 +87,7 @@ public enum PropertyDefinition {
         + "measures whose MEASURE_IS_VISIBLE property is false."),
 
     EndRange(
-        RowsetDefinition.Type.Integer,
+        XmlaType.Integer,
         null,
         XmlaConstants.Access.Write,
         "-1",
@@ -108,7 +95,7 @@ public enum PropertyDefinition {
         "An integer value corresponding to a CellOrdinal used to restrict an MDDataSet returned by a command to a specific range of cells. Used in conjunction with the BeginRange property. If unspecified, all cells are returned in the rowset. The value -1 means unspecified."),
 
     Format(
-        RowsetDefinition.Type.EnumString,
+        XmlaType.EnumString,
         Olap4jUtil.enumSetAllOf(XmlaConstants.Format.class),
         XmlaConstants.Access.Write,
         "Native",
@@ -119,7 +106,7 @@ public enum PropertyDefinition {
         + "Native: The client does not request a specific format, so the provider may return the format  appropriate to the query. (The actual result type is identified by namespace of the result.)"),
 
     LocaleIdentifier(
-        RowsetDefinition.Type.UnsignedInteger,
+        XmlaType.UnsignedInteger,
         null,
         XmlaConstants.Access.ReadWrite,
         "None",
@@ -129,7 +116,7 @@ public enum PropertyDefinition {
         + "As an extension to the XMLA standard, Mondrian also allows locale codes as specified by ISO-639 and ISO-3166 and as used by Java; for example 'en-US'.\n"),
 
     MDXSupport(
-        RowsetDefinition.Type.EnumString,
+        XmlaType.EnumString,
         Olap4jUtil.enumSetAllOf(XmlaConstants.MdxSupport.class),
         XmlaConstants.Access.Read,
         "Core",
@@ -137,7 +124,7 @@ public enum PropertyDefinition {
         "Enumeration that describes the degree of MDX support. At initial release Core is the only value in the enumeration. In future releases, other values will be defined for this enumeration."),
 
     Password(
-        RowsetDefinition.Type.String,
+        XmlaType.String,
         null,
         org.olap4j.metadata.XmlaConstants.Access.Read,
         "",
@@ -145,7 +132,7 @@ public enum PropertyDefinition {
         "This property is deprecated in XMLA 1.1. To support legacy applications, the provider accepts but ignores the Password property setting when it is used with the Discover and Execute method"),
 
     ProviderName(
-        RowsetDefinition.Type.String,
+        XmlaType.String,
         null,
         XmlaConstants.Access.Read,
         "olap4j-xmlaserver",
@@ -153,7 +140,7 @@ public enum PropertyDefinition {
         "The XML for Analysis Provider name."),
 
     ProviderVersion(
-        RowsetDefinition.Type.String,
+        XmlaType.String,
         null,
         XmlaConstants.Access.Read,
         "0.1",
@@ -162,10 +149,10 @@ public enum PropertyDefinition {
 
     // Mondrian-specific extension to XMLA.
     /**
-     * @see Enumeration.ResponseMimeType
+     * @see mondrian.xmla.Enumeration.ResponseMimeType
      */
     ResponseMimeType(
-        RowsetDefinition.Type.String,
+        XmlaType.String,
         null,
         XmlaConstants.Access.ReadWrite,
         "None",
@@ -176,7 +163,7 @@ public enum PropertyDefinition {
         + "of the HTTP request is used."),
 
     StateSupport(
-        RowsetDefinition.Type.EnumString,
+        XmlaType.EnumString,
         Olap4jUtil.enumSetAllOf(XmlaConstants.StateSupport.class),
         XmlaConstants.Access.Read,
         "None",
@@ -186,7 +173,7 @@ public enum PropertyDefinition {
         + "Sessions - Provider supports sessions."),
 
     Timeout(
-        RowsetDefinition.Type.UnsignedInteger,
+        XmlaType.UnsignedInteger,
         null,
         XmlaConstants.Access.ReadWrite,
         "Undefined",
@@ -194,7 +181,7 @@ public enum PropertyDefinition {
         "A numeric time-out specifying in seconds the amount of time to wait for a request to be successful."),
 
     UserName(
-        RowsetDefinition.Type.String,
+        XmlaType.String,
         null,
         XmlaConstants.Access.Read,
         "",
@@ -203,7 +190,7 @@ public enum PropertyDefinition {
         + "This property is deprecated as writeable in XMLA 1.1. To support legacy applications, servers accept but ignore the password setting when it is used with the Execute method."),
 
     VisualMode(
-        RowsetDefinition.Type.Enumeration,
+        XmlaType.Enumeration,
         Olap4jUtil.enumSetAllOf(XmlaConstants.VisualMode.class),
         XmlaConstants.Access.Write,
         Integer.toString(XmlaConstants.VisualMode.VISUAL.ordinal()),
@@ -213,7 +200,7 @@ public enum PropertyDefinition {
 
     // mondrian-specific property for advanced drill-through
     TableFields(
-        RowsetDefinition.Type.String,
+        XmlaType.String,
         null,
         XmlaConstants.Access.Read,
         "",
@@ -224,22 +211,22 @@ public enum PropertyDefinition {
 
     // mondrian-specific property for advanced drill-through
     AdvancedFlag(
-        RowsetDefinition.Type.Boolean,
+        XmlaType.Boolean,
         null,
         XmlaConstants.Access.Read,
         "false",
         XmlaConstants.Method.DISCOVER_AND_EXECUTE,
         "");
 
-    final RowsetDefinition.Type type;
-    final Set<? extends Enum> enumSet;
-    final XmlaConstants.Access access;
-    final XmlaConstants.Method usage;
-    final String value;
-    final String description;
+    public final XmlaType type;
+    public final Set<? extends Enum> enumSet;
+    public final XmlaConstants.Access access;
+    public final XmlaConstants.Method usage;
+    public final String value;
+    public final String description;
 
-    PropertyDefinition(
-        RowsetDefinition.Type type,
+    XmlaPropertyDefinition(
+        XmlaType type,
         Set<? extends Enum> enumSet,
         XmlaConstants.Access access,
         String value,
@@ -270,4 +257,4 @@ public enum PropertyDefinition {
     }
 }
 
-// End PropertyDefinition.java
+// End XmlaPropertyDefinition.java

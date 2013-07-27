@@ -5,7 +5,7 @@
 // You must accept the terms of that agreement to use this software.
 //
 // Copyright (C) 2003-2005 Julian Hyde
-// Copyright (C) 2005-2010 Pentaho
+// Copyright (C) 2005-2013 Pentaho
 // All Rights Reserved.
 //
 // jhyde, May 2, 2003
@@ -15,6 +15,7 @@ package mondrian.xmla;
 import org.olap4j.impl.UnmodifiableArrayMap;
 import org.olap4j.metadata.XmlaConstant;
 import org.olap4j.metadata.XmlaConstants;
+import org.olap4j.xmla.XmlaType;
 
 import java.util.List;
 import java.util.Map;
@@ -28,7 +29,7 @@ import java.util.Map;
 public class Enumeration {
     public final String name;
     public final String description;
-    public final RowsetDefinition.Type type;
+    public final XmlaType type;
     private final XmlaConstant.Dictionary<?> dictionary;
 
     public static final Enumeration TREE_OP =
@@ -36,7 +37,7 @@ public class Enumeration {
             "TREE_OP",
             "Bitmap which controls which relatives of a member are "
             + "returned",
-            RowsetDefinition.Type.Integer,
+            XmlaType.Integer,
             org.olap4j.metadata.Member.TreeOp.getDictionary());
 
     public static final Enumeration VISUAL_MODE =
@@ -44,21 +45,21 @@ public class Enumeration {
             "VisualMode",
             "This property determines the default behavior for visual "
             + "totals.",
-            RowsetDefinition.Type.Integer,
+            XmlaType.Integer,
             org.olap4j.metadata.XmlaConstants.VisualMode.getDictionary());
 
     public static final Enumeration METHODS =
         new Enumeration(
             "Methods",
             "Set of methods for which a property is applicable",
-            RowsetDefinition.Type.Enumeration,
+            XmlaType.Enumeration,
             XmlaConstants.Method.getDictionary());
 
     public static final Enumeration ACCESS =
         new Enumeration(
             "Access",
             "The read/write behavior of a property",
-            RowsetDefinition.Type.Enumeration,
+            XmlaType.Enumeration,
             XmlaConstants.Access.getDictionary());
 
     public static final Enumeration AUTHENTICATION_MODE =
@@ -66,20 +67,20 @@ public class Enumeration {
             "AuthenticationMode",
             "Specification of what type of security mode the data source "
             + "uses.",
-            RowsetDefinition.Type.EnumString,
+            XmlaType.EnumString,
             XmlaConstants.AuthenticationMode.getDictionary());
 
     public static final Enumeration PROVIDER_TYPE =
         new Enumeration(
             "ProviderType",
             "The types of data supported by the provider.",
-            RowsetDefinition.Type.Array,
+            XmlaType.Array,
             XmlaConstants.ProviderType.getDictionary());
 
     public Enumeration(
         String name,
         String description,
-        RowsetDefinition.Type type,
+        XmlaType type,
         XmlaConstant.Dictionary<?> dictionary)
     {
         this.name = name;

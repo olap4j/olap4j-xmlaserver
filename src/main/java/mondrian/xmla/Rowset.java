@@ -5,35 +5,43 @@
 // You must accept the terms of that agreement to use this software.
 //
 // Copyright (C) 2003-2005 Julian Hyde
-// Copyright (C) 2005-2012 Pentaho
+// Copyright (C) 2005-2013 Pentaho
 // All Rights Reserved.
 */
 package mondrian.xmla;
 
-import org.olap4j.xmla.server.impl.Util;
-
-import org.apache.log4j.Logger;
-
 import org.olap4j.OlapConnection;
 import org.olap4j.impl.LcidLocale;
 import org.olap4j.metadata.Catalog;
+import org.olap4j.xmla.*;
+
+import org.olap4j.xmla.server.impl.Util;
+
+import org.apache.log4j.Logger;
 
 import java.sql.SQLException;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import static mondrian.xmla.XmlaConstants.*;
+
 /**
  * Base class for an XML for Analysis schema rowset. A concrete derived class
  * should implement {@link #populateImpl}, calling {@link #addRow} for each row.
  *
  * @author jhyde
- * @see mondrian.xmla.RowsetDefinition
+ * @see org.olap4j.xmla.RowsetDefinition
  * @since May 2, 2003
  */
-abstract class Rowset implements XmlaConstants {
+abstract class Rowset<E extends Entity> {
+    public static final String UUID_PATTERN =
+        "[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-"
+        + "[0-9a-fA-F]{12}";
+
     protected static final Logger LOGGER = Logger.getLogger(Rowset.class);
 
+    protected final E e;
     protected final RowsetDefinition rowsetDefinition;
     protected final Map<String, Object> restrictions;
     protected final Map<String, String> properties;
@@ -41,7 +49,7 @@ abstract class Rowset implements XmlaConstants {
         new HashMap<String, String>();
     protected final XmlaRequest request;
     protected final XmlaHandler handler;
-    private final RowsetDefinition.Column[] restrictedColumns;
+    private final List<Column> restrictedColumns = new ArrayList<Column>();
     protected final boolean deep;
 
     /**
@@ -52,33 +60,32 @@ abstract class Rowset implements XmlaConstants {
      * XmlaException (which are specifically for generating SOAP Fault xml).
      */
     Rowset(
-        RowsetDefinition definition,
+        E entity,
         XmlaRequest request,
         XmlaHandler handler)
     {
-        this.rowsetDefinition = definition;
+        this.e = entity;
+        this.rowsetDefinition = entity.def();
         this.restrictions = request.getRestrictions();
         this.properties = request.getProperties();
         this.request = request;
         this.handler = handler;
-        ArrayList<RowsetDefinition.Column> list =
-            new ArrayList<RowsetDefinition.Column>();
         for (Map.Entry<String, Object> restrictionEntry
             : restrictions.entrySet())
         {
             String restrictedColumn = restrictionEntry.getKey();
             LOGGER.debug(
                 "Rowset<init>: restrictedColumn=\"" + restrictedColumn + "\"");
-            final RowsetDefinition.Column column = definition.lookupColumn(
-                restrictedColumn);
+            final Column column =
+                rowsetDefinition.lookupColumn(restrictedColumn);
             if (column == null) {
                 throw Util.newError(
-                    "Rowset '" + definition.name()
+                    "Rowset '" + rowsetDefinition.name()
                     + "' does not contain column '" + restrictedColumn + "'");
             }
             if (!column.restriction) {
                 throw Util.newError(
-                    "Rowset '" + definition.name()
+                    "Rowset '" + rowsetDefinition.name()
                     + "' column '" + restrictedColumn
                     + "' does not allow restrictions");
             }
@@ -87,7 +94,7 @@ abstract class Rowset implements XmlaConstants {
             if (restriction instanceof List
                 && ((List) restriction).size() > 1)
             {
-                final RowsetDefinition.Type type = column.type;
+                final XmlaType type = column.type;
                 switch (type) {
                 case StringArray:
                 case EnumerationArray:
@@ -95,40 +102,80 @@ abstract class Rowset implements XmlaConstants {
                     break; // OK
                 default:
                     throw Util.newError(
-                        "Rowset '" + definition.name()
+                        "Rowset '" + rowsetDefinition.name()
                         + "' column '" + restrictedColumn
                         + "' can only be restricted on one value at a time");
                 }
             }
-            list.add(column);
+            restrictedColumns.add(column);
         }
-        list = pruneRestrictions(list);
-        this.restrictedColumns =
-            list.toArray(
-                new RowsetDefinition.Column[list.size()]);
+        pruneRestrictions(restrictedColumns);
         boolean deep = false;
         for (Map.Entry<String, String> propertyEntry : properties.entrySet()) {
             String propertyName = propertyEntry.getKey();
-            final PropertyDefinition propertyDef =
-                Util.lookup(PropertyDefinition.class, propertyName);
+            final XmlaPropertyDefinition propertyDef =
+                Util.lookup(XmlaPropertyDefinition.class, propertyName);
             if (propertyDef == null) {
                 throw Util.newError(
-                    "Rowset '" + definition.name()
+                    "Rowset '" + rowsetDefinition.name()
                     + "' does not support property '" + propertyName + "'");
             }
             final String propertyValue = propertyEntry.getValue();
             setProperty(propertyDef, propertyValue);
-            if (propertyDef == PropertyDefinition.Deep) {
+            if (propertyDef == XmlaPropertyDefinition.Deep) {
                 deep = Boolean.valueOf(propertyValue);
             }
         }
         this.deep = deep;
     }
 
-    protected ArrayList<RowsetDefinition.Column> pruneRestrictions(
-        ArrayList<RowsetDefinition.Column> list)
-    {
-        return list;
+    /**
+     * Returns a comparator with which to sort rows of this rowset definition.
+     * The sort order is defined by the
+     * {@link org.olap4j.xmla.RowsetDefinition#sortColumns} field.
+     * If the rowset is not sorted (i.e. the list is empty), returns null.
+     */
+    Comparator<Row> getComparator() {
+        if (rowsetDefinition.sortColumns.isEmpty()) {
+            return null;
+        }
+        return new Comparator<Row>() {
+            public int compare(Row row1, Row row2) {
+                // A faster implementation is welcome.
+                for (Column sortColumn : rowsetDefinition.sortColumns) {
+                    Comparable val1 = (Comparable) row1.get(sortColumn.name);
+                    Comparable val2 = (Comparable) row2.get(sortColumn.name);
+                    if ((val1 == null) && (val2 == null)) {
+                        // columns can be optional, compare next column
+                        //noinspection UnnecessaryContinue
+                        continue;
+                    } else if (val1 == null) {
+                        return -1;
+                    } else if (val2 == null) {
+                        return 1;
+                    } else if (val1 instanceof String
+                               && val2 instanceof String)
+                    {
+                        int v =
+                            ((String) val1).compareToIgnoreCase((String) val2);
+                        // if equal (= 0), compare next column
+                        if (v != 0) {
+                            return v;
+                        }
+                    } else {
+                        int v = val1.compareTo(val2);
+                        // if equal (= 0), compare next column
+                        if (v != 0) {
+                            return v;
+                        }
+                    }
+                }
+                return 0;
+            }
+        };
+    }
+
+    protected void pruneRestrictions(List<Column> list) {
     }
 
     /**
@@ -139,7 +186,9 @@ abstract class Rowset implements XmlaConstants {
      * property it supports. Any property it does not support, it should forward
      * to the base class method, which will probably throw an error.<p/>
      */
-    protected void setProperty(PropertyDefinition propertyDef, String value) {
+    protected void setProperty(
+        XmlaPropertyDefinition propertyDef, String value)
+    {
         switch (propertyDef) {
         case Format:
             break;
@@ -184,6 +233,117 @@ abstract class Rowset implements XmlaConstants {
     }
 
     /**
+     * Generates an XML schema description to the writer.
+     * This is broken into top, Row definition and bottom so that on a
+     * case by case basis a RowsetDefinition can redefine the Row
+     * definition output. The default assumes a flat set of elements, but
+     * for example, SchemaRowsets has a element with child elements.
+     *
+     * @param writer SAX writer
+     * @see XmlaHandler#writeDatasetXmlSchema(SaxWriter, mondrian.xmla.XmlaHandler.SetType)
+     */
+    void writeRowsetXmlSchema(SaxWriter writer) {
+        writeRowsetXmlSchemaTop(writer);
+        writeRowsetXmlSchemaRowDef(writer);
+        writeRowsetXmlSchemaBottom(writer);
+    }
+
+    protected void writeRowsetXmlSchemaTop(SaxWriter writer) {
+        writer.startElement(
+            "xsd:schema",
+            "xmlns:xsd", NS_XSD,
+            "xmlns", NS_XMLA_ROWSET,
+            "xmlns:xsi", NS_XSI,
+            "xmlns:sql", "urn:schemas-microsoft-com:xml-sql",
+            "targetNamespace", NS_XMLA_ROWSET,
+            "elementFormDefault", "qualified");
+
+        writer.startElement(
+            "xsd:element",
+            "name", "root");
+        writer.startElement("xsd:complexType");
+        writer.startElement("xsd:sequence");
+        writer.element(
+            "xsd:element",
+            "name", "row",
+            "type", "row",
+            "minOccurs", 0,
+            "maxOccurs", "unbounded");
+        writer.endElement(); // xsd:sequence
+        writer.endElement(); // xsd:complexType
+        writer.endElement(); // xsd:element
+
+        // MS SQL includes this in its schema section even thought
+        // its not need for most queries.
+        writer.startElement(
+            "xsd:simpleType",
+            "name", "uuid");
+        writer.startElement(
+            "xsd:restriction",
+            "base", "xsd:string");
+        writer.element(
+            "xsd:pattern",
+            "value", UUID_PATTERN);
+
+        writer.endElement(); // xsd:restriction
+        writer.endElement(); // xsd:simpleType
+    }
+
+    protected void writeRowsetXmlSchemaRowDef(SaxWriter writer) {
+        writer.startElement(
+            "xsd:complexType",
+            "name", "row");
+        writer.startElement("xsd:sequence");
+        for (Column column : rowsetDefinition.columns) {
+            final String name =
+                XmlaUtil.ElementNameEncoder.INSTANCE.encode(column.name);
+            final String xsdType = column.type.columnType;
+
+            Object[] attrs;
+            if (column.nullable) {
+                if (column.unbounded) {
+                    attrs = new Object[]{
+                        "sql:field", column.name,
+                        "name", name,
+                        "type", xsdType,
+                        "minOccurs", 0,
+                        "maxOccurs", "unbounded"
+                    };
+                } else {
+                    attrs = new Object[]{
+                        "sql:field", column.name,
+                        "name", name,
+                        "type", xsdType,
+                        "minOccurs", 0
+                    };
+                }
+            } else {
+                if (column.unbounded) {
+                    attrs = new Object[]{
+                        "sql:field", column.name,
+                        "name", name,
+                        "type", xsdType,
+                        "maxOccurs", "unbounded"
+                    };
+                } else {
+                    attrs = new Object[]{
+                        "sql:field", column.name,
+                        "name", name,
+                        "type", xsdType
+                    };
+                }
+            }
+            writer.element("xsd:element", attrs);
+        }
+        writer.endElement(); // xsd:sequence
+        writer.endElement(); // xsd:complexType
+    }
+
+    protected void writeRowsetXmlSchemaBottom(SaxWriter writer) {
+        writer.endElement(); // xsd:schema
+    }
+
+    /**
      * Writes the contents of this rowset as a series of SAX events.
      */
     public final void unparse(XmlaResponse response)
@@ -191,7 +351,7 @@ abstract class Rowset implements XmlaConstants {
     {
         final List<Row> rows = new ArrayList<Row>();
         populate(response, null, rows);
-        final Comparator<Row> comparator = rowsetDefinition.getComparator();
+        final Comparator<Row> comparator = getComparator();
         if (comparator != null) {
             Collections.sort(rows, comparator);
         }
@@ -281,9 +441,7 @@ abstract class Rowset implements XmlaConstants {
         SaxWriter writer = response.getWriter();
 
         writer.startElement("row");
-        for (RowsetDefinition.Column column
-            : rowsetDefinition.columnDefinitions)
-        {
+        for (Column column : rowsetDefinition.columns) {
             Object value = row.get(column.name);
             if (value == null) {
                 if (!column.nullable) {
@@ -367,9 +525,7 @@ abstract class Rowset implements XmlaConstants {
         Arrays.sort(enumsSortedByName, comparator);
         for (E anEnum : enumsSortedByName) {
             Row row = new Row();
-            for (RowsetDefinition.Column column
-                : rowsetDefinition.columnDefinitions)
-            {
+            for (Column column : rowsetDefinition.columns) {
                 row.names.add(column.name);
                 row.values.add(column.get(anEnum));
             }
@@ -399,9 +555,7 @@ abstract class Rowset implements XmlaConstants {
      *     {@link org.olap4j.metadata.Level}
      * @return Condition functor
      */
-    <E> Util.Predicate1<E> makeCondition(
-        RowsetDefinition.Column column)
-    {
+    <E> Util.Predicate1<E> makeCondition(Column column) {
         return makeCondition(
             Util.<E>identityFunction(),
             column);
@@ -423,7 +577,7 @@ abstract class Rowset implements XmlaConstants {
      */
     <E, V> Util.Predicate1<E> makeCondition(
         final Util.Function1<? super E, V> getter,
-        RowsetDefinition.Column column)
+        Column column)
     {
         final Object restriction = restrictions.get(column.name);
 
@@ -464,7 +618,7 @@ abstract class Rowset implements XmlaConstants {
      * if all members of the array have the same value (in which case
      * one could return, again, simply a single String).
      */
-    String getRestrictionValueAsString(RowsetDefinition.Column column) {
+    String getRestrictionValueAsString(Column column) {
         final Object restriction = restrictions.get(column.name);
         if (restriction instanceof List) {
             List<String> rval = (List<String>) restriction;
@@ -479,7 +633,7 @@ abstract class Rowset implements XmlaConstants {
      * Returns a column's restriction as an <code>int</code> if it
      * exists, -1 otherwise.
      */
-    int getRestrictionValueAsInt(RowsetDefinition.Column column) {
+    int getRestrictionValueAsInt(Column column) {
         final Object restriction = restrictions.get(column.name);
         if (restriction instanceof List) {
             List<String> rval = (List<String>) restriction;
@@ -500,16 +654,15 @@ abstract class Rowset implements XmlaConstants {
     /**
      * Returns true if there is a restriction for the given column
      * definition.
-     *
      */
-    protected boolean isRestricted(RowsetDefinition.Column column) {
+    protected boolean isRestricted(Column column) {
         return (restrictions.get(column.name) != null);
     }
 
     protected Util.Predicate1<Catalog> catNameCond() {
         Map<String, String> properties = request.getProperties();
         final String catalogName =
-            properties.get(PropertyDefinition.Catalog.name());
+            properties.get(XmlaPropertyDefinition.Catalog.name());
         if (catalogName != null) {
             return new Util.Predicate1<Catalog>() {
                 public boolean test(Catalog catalog) {
