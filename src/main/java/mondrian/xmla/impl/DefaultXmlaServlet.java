@@ -4,7 +4,7 @@
 // http://www.eclipse.org/legal/epl-v10.html.
 // You must accept the terms of that agreement to use this software.
 //
-// Copyright (C) 2005-2011 Pentaho
+// Copyright (C) 2005-2013 Pentaho
 // All Rights Reserved.
 */
 package mondrian.xmla.impl;
@@ -14,6 +14,7 @@ import mondrian.xmla.*;
 import org.olap4j.impl.Olap4jUtil;
 
 import org.olap4j.xmla.Enumeration;
+
 import org.w3c.dom.*;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
@@ -28,6 +29,8 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.xml.parsers.*;
+
+import static org.olap4j.metadata.XmlaConstants.ResponseMimeType;
 
 /**
  * Default implementation of XML/A servlet.
@@ -486,13 +489,12 @@ public abstract class DefaultXmlaServlet extends XmlaServlet {
             // "ResponseMimeType" may be in the context if the "Accept" HTTP
             // header was specified. But override if the SOAP request has the
             // "ResponseMimeType" property.
-            Enumeration.ResponseMimeType responseMimeType =
-                Enumeration.ResponseMimeType.SOAP;
+            ResponseMimeType responseMimeType = ResponseMimeType.SOAP;
             final String responseMimeTypeName =
                 xmlaReq.getProperties().get("ResponseMimeType");
             if (responseMimeTypeName != null) {
                 responseMimeType =
-                    Enumeration.ResponseMimeType.MAP.get(
+                    ResponseMimeType.MAP.get(
                         responseMimeTypeName);
                 if (responseMimeType != null) {
                     context.put(CONTEXT_MIME_TYPE, responseMimeType);
@@ -529,7 +531,7 @@ public abstract class DefaultXmlaServlet extends XmlaServlet {
     protected void marshallSoapMessage(
         HttpServletResponse response,
         byte[][] responseSoapParts,
-        Enumeration.ResponseMimeType responseMimeType)
+        ResponseMimeType responseMimeType)
         throws XmlaException
     {
         try {

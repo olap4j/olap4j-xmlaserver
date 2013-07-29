@@ -12,10 +12,9 @@ package mondrian.xmla;
 
 import mondrian.xmla.impl.DefaultXmlaResponse;
 
-import org.olap4j.xmla.*;
-
-import org.olap4j.xmla.Enumeration;
 import org.olap4j.xmla.server.impl.Util;
+
+import org.olap4j.xmla.*;
 
 import org.olap4j.OlapConnection;
 import org.olap4j.OlapException;
@@ -38,6 +37,7 @@ import javax.xml.transform.stream.StreamResult;
 
 import static org.olap4j.metadata.XmlaConstants.Format;
 import static org.olap4j.metadata.XmlaConstants.Method;
+import static org.olap4j.metadata.XmlaConstants.ResponseMimeType;
 
 /**
  * Utility methods for XML/A implementation.
@@ -414,7 +414,7 @@ way too noisy
             new DefaultXmlaResponse(
                 new ByteArrayOutputStream(),
                 Charset.defaultCharset().name(),
-                Enumeration.ResponseMimeType.SOAP),
+                ResponseMimeType.SOAP),
             connection,
             rowList);
         MetadataRowset result = new MetadataRowset();
@@ -479,7 +479,7 @@ way too noisy
      * @param accept Accept header
      * @return Mime type, or null if none is acceptable
      */
-    public static Enumeration.ResponseMimeType chooseResponseMimeType(
+    public static ResponseMimeType chooseResponseMimeType(
         String accept)
     {
         for (String s : accept.split(",")) {
@@ -488,8 +488,7 @@ way too noisy
             if (semicolon >= 0) {
                 s = s.substring(0, semicolon);
             }
-            Enumeration.ResponseMimeType mimeType =
-                Enumeration.ResponseMimeType.MAP.get(s);
+            ResponseMimeType mimeType = ResponseMimeType.MAP.get(s);
             if (mimeType != null) {
                 return mimeType;
             }

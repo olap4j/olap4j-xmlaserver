@@ -5,23 +5,24 @@
 // You must accept the terms of that agreement to use this software.
 //
 // Copyright (C) 2003-2005 Julian Hyde
-// Copyright (C) 2005-2011 Pentaho
+// Copyright (C) 2005-2013 Pentaho
 // All Rights Reserved.
 */
 package mondrian.xmla;
 
 import org.apache.log4j.Logger;
 
-import org.olap4j.xmla.*;
 import org.w3c.dom.Element;
 
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.util.*;
-import java.util.Enumeration;
+
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
 import javax.servlet.http.*;
+
+import static org.olap4j.metadata.XmlaConstants.ResponseMimeType;
 
 /**
  * Base XML/A servlet.
@@ -81,10 +82,8 @@ public abstract class XmlaServlet
     public XmlaServlet() {
     }
 
-
     /**
      * Initializes servlet and XML/A handler.
-     *
      */
     public void init(ServletConfig servletConfig)
         throws ServletException
@@ -155,8 +154,7 @@ public abstract class XmlaServlet
         byte[][] responseSoapParts = new byte[2][];
 
         Phase phase = Phase.VALIDATE_HTTP_HEAD;
-        org.olap4j.xmla.Enumeration.ResponseMimeType mimeType =
-            org.olap4j.xmla.Enumeration.ResponseMimeType.SOAP;
+        ResponseMimeType mimeType = ResponseMimeType.SOAP;
 
         try {
             if (charEncoding != null) {
@@ -240,7 +238,7 @@ public abstract class XmlaServlet
                             + " response content type. Allowed values:"
                             + " text/xml, application/xml, application/json.");
                     }
-                    if (mimeType != org.olap4j.xmla.Enumeration.ResponseMimeType.SOAP) {
+                    if (mimeType != ResponseMimeType.SOAP) {
                         response.setContentType(mimeType.getMimeType());
                     }
                 }
@@ -329,8 +327,7 @@ public abstract class XmlaServlet
                 return;
             }
 
-            mimeType =
-                (org.olap4j.xmla.Enumeration.ResponseMimeType) context.get(CONTEXT_MIME_TYPE);
+            mimeType = (ResponseMimeType) context.get(CONTEXT_MIME_TYPE);
 
             phase = Phase.CALLBACK_POST_ACTION;
 
@@ -418,7 +415,7 @@ public abstract class XmlaServlet
     protected abstract void marshallSoapMessage(
         HttpServletResponse response,
         byte[][] responseSoapParts,
-        org.olap4j.xmla.Enumeration.ResponseMimeType responseMimeType)
+        ResponseMimeType responseMimeType)
         throws XmlaException;
 
     /**

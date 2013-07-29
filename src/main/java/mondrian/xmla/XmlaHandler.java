@@ -12,18 +12,17 @@ package mondrian.xmla;
 
 import mondrian.xmla.impl.DefaultSaxWriter;
 
+import org.olap4j.xmla.server.impl.CompositeList;
+import org.olap4j.xmla.server.impl.Util;
+
+import org.apache.log4j.Logger;
+
 import org.olap4j.*;
 import org.olap4j.impl.Olap4jUtil;
 import org.olap4j.metadata.*;
 import org.olap4j.metadata.Property.StandardCellProperty;
 import org.olap4j.metadata.Property.StandardMemberProperty;
 import org.olap4j.xmla.*;
-import org.olap4j.xmla.Enumeration;
-
-import org.olap4j.xmla.server.impl.CompositeList;
-import org.olap4j.xmla.server.impl.Util;
-
-import org.apache.log4j.Logger;
 
 import org.xml.sax.SAXException;
 
@@ -698,7 +697,7 @@ public class XmlaHandler {
         final Map<String, String> properties = request.getProperties();
 
         // Default responseMimeType is SOAP.
-        Enumeration.ResponseMimeType responseMimeType =
+        ResponseMimeType responseMimeType =
             getResponseMimeType(request);
 
         // Default value is SchemaData, or Data for JSON responses.
@@ -707,7 +706,7 @@ public class XmlaHandler {
         Content content = Util.lookup(
             Content.class,
             contentName,
-            responseMimeType == Enumeration.ResponseMimeType.JSON
+            responseMimeType == ResponseMimeType.JSON
                 ? Content.Data
                 : Content.DEFAULT);
 
@@ -1675,7 +1674,7 @@ public class XmlaHandler {
 
                 final Format format = getFormat(request, null);
                 final Content content = getContent(request);
-                final Enumeration.ResponseMimeType responseMimeType =
+                final ResponseMimeType responseMimeType =
                     getResponseMimeType(request);
                 final MDDataSet dataSet;
                 if (format == Format.Multidimensional) {
@@ -1684,8 +1683,7 @@ public class XmlaHandler {
                             extra,
                             cellSet,
                             content != Content.DataIncludeDefaultSlicer,
-                            responseMimeType
-                            == Enumeration.ResponseMimeType.JSON);
+                            responseMimeType == ResponseMimeType.JSON);
                 } else {
                     dataSet =
                         new MDDataSet_Tabular(cellSet);
@@ -1750,15 +1748,15 @@ public class XmlaHandler {
             Content.DEFAULT);
     }
 
-    private static Enumeration.ResponseMimeType getResponseMimeType(
+    private static ResponseMimeType getResponseMimeType(
         XmlaRequest request)
     {
-        Enumeration.ResponseMimeType mimeType =
-            Enumeration.ResponseMimeType.MAP.get(
+        ResponseMimeType mimeType =
+            ResponseMimeType.MAP.get(
                 request.getProperties().get(
                     XmlaPropertyDefinition.ResponseMimeType.name()));
         if (mimeType == null) {
-            mimeType = Enumeration.ResponseMimeType.SOAP;
+            mimeType = ResponseMimeType.SOAP;
         }
         return mimeType;
     }

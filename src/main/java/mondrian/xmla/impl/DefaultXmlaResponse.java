@@ -4,18 +4,19 @@
 // http://www.eclipse.org/legal/epl-v10.html.
 // You must accept the terms of that agreement to use this software.
 //
-// Copyright (C) 2005-2012 Pentaho
+// Copyright (C) 2005-2013 Pentaho
 // All Rights Reserved.
 */
 package mondrian.xmla.impl;
 
 import mondrian.xmla.*;
 
-import org.olap4j.xmla.Enumeration;
 import org.olap4j.xmla.server.impl.Util;
 
 import java.io.OutputStream;
 import java.io.UnsupportedEncodingException;
+
+import static org.olap4j.metadata.XmlaConstants.ResponseMimeType;
 
 /**
  * Default implementation of {@link mondrian.xmla.XmlaResponse}.
@@ -32,7 +33,7 @@ public class DefaultXmlaResponse implements XmlaResponse  {
     public DefaultXmlaResponse(
         OutputStream outputStream,
         String encoding,
-        Enumeration.ResponseMimeType responseMimeType)
+        ResponseMimeType responseMimeType)
     {
         try {
             switch (responseMimeType) {

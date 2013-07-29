@@ -10,6 +10,9 @@
 */
 package mondrian.xmla;
 
+import org.olap4j.xmla.server.impl.Composite;
+import org.olap4j.xmla.server.impl.Util;
+
 import org.olap4j.OlapConnection;
 import org.olap4j.OlapException;
 import org.olap4j.impl.ArrayNamedListImpl;
@@ -20,10 +23,7 @@ import org.olap4j.metadata.*;
 import org.olap4j.metadata.Member.TreeOp;
 import org.olap4j.metadata.XmlaConstants;
 import org.olap4j.xmla.*;
-
 import org.olap4j.xmla.Enumeration;
-import org.olap4j.xmla.server.impl.Composite;
-import org.olap4j.xmla.server.impl.Util;
 
 import java.sql.SQLException;
 import java.text.Format;
@@ -667,11 +667,9 @@ public class Rowsets {
                     row.set(e.ElementName.name, name);
 
                     final String description =
-                     (value instanceof XmlaConstant)
-                        ? ((XmlaConstant) value).getDescription()
-                         : (value instanceof XmlaConstants.EnumWithDesc)
-                        ? ((XmlaConstants.EnumWithDesc) value).getDescription()
-                             : null;
+                        (value instanceof XmlaConstant)
+                            ? ((XmlaConstant) value).getDescription()
+                            : null;
                     if (description != null) {
                         row.set(
                             e.ElementDescription.name,
