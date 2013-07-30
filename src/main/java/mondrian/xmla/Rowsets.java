@@ -115,17 +115,6 @@ public class Rowsets {
         }
     }
 
-    static int getDimensionType(Dimension dim) throws OlapException {
-        switch (dim.getDimensionType()) {
-        case MEASURE:
-            return MdschemaDimensionsRowset.MD_DIMTYPE_MEASURE;
-        case TIME:
-            return MdschemaDimensionsRowset.MD_DIMTYPE_TIME;
-        default:
-            return MdschemaDimensionsRowset.MD_DIMTYPE_OTHER;
-        }
-    }
-
     public static final Util.Function1<Catalog, String> CATALOG_NAME_GETTER =
         new Util.Function1<Catalog, String>() {
             public String apply(Catalog catalog) {
@@ -1561,9 +1550,6 @@ TODO: see above
             cubeNameCond = makeCondition(ELEMENT_NAME_GETTER, e.CubeName);
         }
 
-        public static final String MD_CUBTYPE_CUBE = "CUBE";
-        public static final String MD_CUBTYPE_VIRTUAL_CUBE = "VIRTUAL CUBE";
-
         public void populateImpl(
             XmlaResponse response,
             OlapConnection connection,
@@ -1688,10 +1674,6 @@ TODO: see above
                 makeCondition(ELEMENT_NAME_GETTER, e.DimensionName);
         }
 
-        public static final int MD_DIMTYPE_OTHER = 3;
-        public static final int MD_DIMTYPE_MEASURE = 2;
-        public static final int MD_DIMTYPE_TIME = 1;
-
         public void populateImpl(
             XmlaResponse response,
             OlapConnection connection,
@@ -1761,14 +1743,15 @@ TODO: see above
             row.set(
                 e.DimensionOrdinal.name,
                 cube.getDimensions().indexOf(dimension));
-            row.set(e.DimensionType.name, getDimensionType(dimension));
+            final Dimension.Type dimensionType = dimension.getDimensionType();
+            row.set(e.DimensionType.name, dimensionType.xmlaOrdinal());
 
             //Is this the number of primaryKey members there are??
             // According to microsoft this is:
             //    "The number of members in the key attribute."
             // There may be a better way of doing this but
             // this is what I came up with. Note that I need to
-            // add '1' to the number inorder for it to match
+            // add '1' to the number in order for it to match
             // match what microsoft SQL Server is producing.
             // The '1' might have to do with whether or not the
             // hierarchy has a 'all' member or not - don't know yet.
@@ -2038,7 +2021,8 @@ TODO: see above
             //row.set(HierarchyGuid.name, "");
 
             row.set(e.HierarchyCaption.name, hierarchy.getCaption());
-            row.set(e.DimensionType.name, getDimensionType(dimension));
+            final Dimension.Type dimensionType = dimension.getDimensionType();
+            row.set(e.DimensionType.name, dimensionType.xmlaOrdinal());
             // The number of members in the hierarchy. Because
             // of the presence of multiple hierarchies, this number
             // might not be the same as DIMENSION_CARDINALITY. This
@@ -2137,28 +2121,6 @@ TODO: see above
                 makeCondition(ELEMENT_UNAME_GETTER, e.LevelUniqueName);
             levelNameCond = makeCondition(ELEMENT_NAME_GETTER, e.LevelName);
         }
-
-        public static final int MDLEVEL_TYPE_UNKNOWN = 0x0000;
-        public static final int MDLEVEL_TYPE_REGULAR = 0x0000;
-        public static final int MDLEVEL_TYPE_ALL = 0x0001;
-        public static final int MDLEVEL_TYPE_CALCULATED = 0x0002;
-        public static final int MDLEVEL_TYPE_TIME = 0x0004;
-        public static final int MDLEVEL_TYPE_RESERVED1 = 0x0008;
-        public static final int MDLEVEL_TYPE_TIME_YEARS = 0x0014;
-        public static final int MDLEVEL_TYPE_TIME_HALF_YEAR = 0x0024;
-        public static final int MDLEVEL_TYPE_TIME_QUARTERS = 0x0044;
-        public static final int MDLEVEL_TYPE_TIME_MONTHS = 0x0084;
-        public static final int MDLEVEL_TYPE_TIME_WEEKS = 0x0104;
-        public static final int MDLEVEL_TYPE_TIME_DAYS = 0x0204;
-        public static final int MDLEVEL_TYPE_TIME_HOURS = 0x0304;
-        public static final int MDLEVEL_TYPE_TIME_MINUTES = 0x0404;
-        public static final int MDLEVEL_TYPE_TIME_SECONDS = 0x0804;
-        public static final int MDLEVEL_TYPE_TIME_UNDEFINED = 0x1004;
-
-        // TODO: move the following 2 fields to olap4j
-
-        public static final int MDDIMENSIONS_MEMBER_KEY_UNIQUE  = 1;
-        public static final int MDDIMENSIONS_MEMBER_NAME_UNIQUE = 2;
 
         public void populateImpl(
             XmlaResponse response,
@@ -2319,20 +2281,9 @@ TODO: see above
         }
     }
 
-
     public static class MdschemaMeasuresRowset
         extends Rowset<XmlaMeasure>
     {
-        public static final int MDMEASURE_AGGR_UNKNOWN = 0;
-        public static final int MDMEASURE_AGGR_SUM = 1;
-        public static final int MDMEASURE_AGGR_COUNT = 2;
-        public static final int MDMEASURE_AGGR_MIN = 3;
-        public static final int MDMEASURE_AGGR_MAX = 4;
-        public static final int MDMEASURE_AGGR_AVG = 5;
-        public static final int MDMEASURE_AGGR_VAR = 6;
-        public static final int MDMEASURE_AGGR_STD = 7;
-        public static final int MDMEASURE_AGGR_CALCULATED = 127;
-
         private final Util.Predicate1<Catalog> catalogCond;
         private final Util.Predicate1<Schema> schemaNameCond;
         private final Util.Predicate1<Cube> cubeNameCond;
@@ -2899,7 +2850,6 @@ TODO: see above
         private final Util.Predicate1<Schema> schemaNameCond;
         private final Util.Predicate1<Cube> cubeNameCond;
         private final Util.Predicate1<NamedSet> setUnameCond;
-        private static final String GLOBAL_SCOPE = "1";
 
         MdschemaSetsRowset(XmlaRequest request, XmlaHandler handler) {
             super(XmlaSet.INSTANCE, request, handler);
@@ -2946,7 +2896,7 @@ TODO: see above
                 row.set(e.SchemaName.name, cube.getSchema().getName());
                 row.set(e.CubeName.name, cube.getName());
                 row.set(e.SetName.name, namedSet.getUniqueName());
-                row.set(e.Scope.name, GLOBAL_SCOPE);
+                row.set(e.Scope.name, NamedSet.Scope.GLOBAL.xmlaOrdinal());
                 row.set(e.Description.name, namedSet.getDescription());
                 addRow(row, rows);
             }
@@ -3022,9 +2972,7 @@ TODO: see above
                 Row row = new Row();
                 row.set(
                     e.PropertyType.name,
-                    Property.TypeFlag.DICTIONARY
-                        .toMask(
-                            property.getType()));
+                    Property.TypeFlag.DICTIONARY.toMask(property.getType()));
                 row.set(e.PropertyName.name, property.name());
                 row.set(e.PropertyCaption.name, property.getCaption());
                 row.set(e.DataType.name, property.getDatatype().xmlaOrdinal());

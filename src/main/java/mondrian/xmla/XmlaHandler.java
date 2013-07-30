@@ -3158,7 +3158,11 @@ public class XmlaHandler {
         }
 
         public int getMeasureAggregator(Member member) {
-            return Rowsets.MdschemaMeasuresRowset.MDMEASURE_AGGR_UNKNOWN;
+            final Measure.Aggregator aggregator =
+                member instanceof Measure
+                    ? ((Measure) member).getAggregator()
+                    : Measure.Aggregator.UNKNOWN;
+            return aggregator.xmlaOrdinal();
         }
 
         public void checkMemberOrdinal(Member member) throws OlapException {
@@ -3180,7 +3184,8 @@ public class XmlaHandler {
         }
 
         public String getCubeType(Cube cube) {
-            return Rowsets.MdschemaCubesRowset.MD_CUBTYPE_CUBE;
+            Cube.Type type = Cube.Type.CUBE;
+            return type.xmlaName(); // e.g. "CUBE"
         }
 
         public boolean isLevelUnique(Level level) {
