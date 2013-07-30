@@ -49,7 +49,6 @@ abstract class Rowset<E extends Entity> {
         new HashMap<String, String>();
     protected final XmlaRequest request;
     protected final XmlaHandler handler;
-    private final List<Column> restrictedColumns = new ArrayList<Column>();
     protected final boolean deep;
 
     /**
@@ -70,6 +69,7 @@ abstract class Rowset<E extends Entity> {
         this.properties = request.getProperties();
         this.request = request;
         this.handler = handler;
+        List<Column> restrictedColumns = new ArrayList<Column>();
         for (Map.Entry<String, Object> restrictionEntry
             : restrictions.entrySet())
         {
@@ -83,7 +83,7 @@ abstract class Rowset<E extends Entity> {
                     "Rowset '" + rowsetDefinition.name()
                     + "' does not contain column '" + restrictedColumn + "'");
             }
-            if (!column.restriction) {
+            if (!rowsetDefinition.restrictionColumns.contains(column)) {
                 throw Util.newError(
                     "Rowset '" + rowsetDefinition.name()
                     + "' column '" + restrictedColumn

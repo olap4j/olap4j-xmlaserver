@@ -44,8 +44,48 @@ public class Rowsets {
         switch (def) {
         case DISCOVER_DATASOURCES:
             return new DiscoverDatasourcesRowset(request, handler);
+        case DISCOVER_ENUMERATORS:
+            return new DiscoverEnumeratorsRowset(request, handler);
+        case DISCOVER_KEYWORDS:
+            return new DiscoverKeywordsRowset(request, handler);
+        case DISCOVER_LITERALS:
+            return new DiscoverLiteralsRowset(request, handler);
+        case DISCOVER_PROPERTIES:
+            return new DiscoverPropertiesRowset(request, handler);
+        case DISCOVER_SCHEMA_ROWSETS:
+            return new DiscoverSchemaRowsetsRowset(request, handler);
         case DBSCHEMA_CATALOGS:
             return new DbschemaCatalogsRowset(request, handler);
+        case DBSCHEMA_COLUMNS:
+            return new DbschemaColumnsRowset(request, handler);
+        case DBSCHEMA_PROVIDER_TYPES:
+            return new DbschemaProviderTypesRowset(request, handler);
+        case DBSCHEMA_SCHEMATA:
+            return new DbschemaSchemataRowset(request, handler);
+        case DBSCHEMA_TABLES:
+            return new DbschemaTablesRowset(request, handler);
+        case DBSCHEMA_TABLES_INFO:
+            return new DbschemaTablesInfoRowset(request, handler);
+        case MDSCHEMA_ACTIONS:
+            return new MdschemaActionsRowset(request, handler);
+        case MDSCHEMA_CUBES:
+            return new MdschemaCubesRowset(request, handler);
+        case MDSCHEMA_DIMENSIONS:
+            return new MdschemaDimensionsRowset(request, handler);
+        case MDSCHEMA_FUNCTIONS:
+            return new MdschemaFunctionsRowset(request, handler);
+        case MDSCHEMA_HIERARCHIES:
+            return new MdschemaHierarchiesRowset(request, handler);
+        case MDSCHEMA_LEVELS:
+            return new MdschemaLevelsRowset(request, handler);
+        case MDSCHEMA_MEASURES:
+            return new MdschemaMeasuresRowset(request, handler);
+        case MDSCHEMA_MEMBERS:
+            return new MdschemaMembersRowset(request, handler);
+        case MDSCHEMA_PROPERTIES:
+            return new MdschemaPropertiesRowset(request, handler);
+        case MDSCHEMA_SETS:
+            return new MdschemaSetsRowset(request, handler);
         default:
             throw new AssertionError(def);
         }
@@ -562,19 +602,17 @@ public class Rowsets {
             RowsetDefinition rowsetDefinition)
         {
             List<XmlElement> restrictionList = new ArrayList<XmlElement>();
-            for (Column column : rowsetDefinition.columns) {
-                if (column.restriction) {
-                    restrictionList.add(
-                        new XmlElement(
-                            e.Restrictions.name,
-                            null,
-                            new XmlElement[]{
-                                new XmlElement("Name", null, column.name),
-                                new XmlElement(
-                                    "Type",
-                                    null,
-                                    column.getColumnType())}));
-                }
+            for (Column column : rowsetDefinition.restrictionColumns) {
+                restrictionList.add(
+                    new XmlElement(
+                        e.Restrictions.name,
+                        null,
+                        new XmlElement[]{
+                            new XmlElement("Name", null, column.name),
+                            new XmlElement(
+                                "Type",
+                                null,
+                                column.getColumnType())}));
             }
             return restrictionList;
         }
@@ -655,9 +693,9 @@ public class Rowsets {
                     row.set(e.EnumName.name, enumerator.name);
                     row.set(e.EnumDescription.name, enumerator.description);
 
-                    // Note: SQL Server always has EnumType string
+                    // Note: SQL Server always has EnumType string.
                     // Need type of element of array, not the array
-                    // it self.
+                    // itself.
                     row.set(e.EnumType.name, "string");
 
                     final String name =
@@ -2449,7 +2487,7 @@ TODO: see above
             }
 
             row.set(e.Description.name, desc);
-            row.set(e.FormatString.name, formatString);
+            row.set(e.DefaultFormatString.name, formatString);
             addRow(row, rows);
         }
 
@@ -2713,8 +2751,8 @@ TODO: see above
             // the result on TreeOp (because it's not an output column) or
             // on MemberUniqueName (because TreeOp will have caused us to
             // generate other members than the one asked for).
-            if (list.contains(e.TreeOp_)) {
-                list.remove(e.TreeOp_);
+            if (list.contains(e.TreeOp)) {
+                list.remove(e.TreeOp);
                 list.remove(e.MemberUniqueName);
             }
         }
@@ -2755,8 +2793,8 @@ TODO: see above
                 if (member == null) {
                     return;
                 }
-                if (isRestricted(e.TreeOp_)) {
-                    int treeOp = getRestrictionValueAsInt(e.TreeOp_);
+                if (isRestricted(e.TreeOp)) {
+                    int treeOp = getRestrictionValueAsInt(e.TreeOp);
                     if (treeOp == -1) {
                         return;
                     }
@@ -2957,7 +2995,7 @@ TODO: see above
                         Property.TypeFlag.MEMBER);
             } else {
                 typeFlags =
-                    Property.TypeFlag.getDictionary().forMask(
+                    Property.TypeFlag.DICTIONARY.forMask(
                         Integer.valueOf(list.get(0)));
             }
 
@@ -2984,7 +3022,7 @@ TODO: see above
                 Row row = new Row();
                 row.set(
                     e.PropertyType.name,
-                    Property.TypeFlag.getDictionary()
+                    Property.TypeFlag.DICTIONARY
                         .toMask(
                             property.getType()));
                 row.set(e.PropertyName.name, property.name());
