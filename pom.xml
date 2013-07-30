@@ -47,8 +47,8 @@
   <issueManagement/>
 
   <scm>
-    <connection>scm:git:git://github.com/julianhyde/olap4j-xmlaserver.git</connection>
-    <developerConnection>scm:git:git@github.com:julianhyde/olap4j-xmlaserver.git</developerConnection>
+    <connection>scm:git:git://github.com/olap4j/olap4j-xmlaserver.git</connection>
+    <developerConnection>scm:git:git@github.com:olap4j/olap4j-xmlaserver.git</developerConnection>
     <url>http://github.com/olap4j/olap4j-xmlaserver/tree/master</url>
   </scm>
 
