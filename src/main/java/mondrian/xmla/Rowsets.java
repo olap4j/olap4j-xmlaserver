@@ -366,6 +366,10 @@ public class Rowsets {
             return Collections.emptyList();
         }
 
+        public NamedList<MeasureGroup> getMeasureGroups() {
+            return Olap4jUtil.emptyNamedList();
+        }
+
         public NamedList<NamedSet> getSets() {
             throw new UnsupportedOperationException();
         }
@@ -1365,7 +1369,7 @@ TODO: see above
                 for (Cube cube : filter(sortedCubes(schema), tableNameCond)) {
                     String desc = cube.getDescription();
                     if (desc == null) {
-                        //TODO: currently this is always null
+                        // TODO: currently this is always null
                         desc =
                             catalog.getName() + " - "
                             + cube.getName() + " Cube";
@@ -1436,7 +1440,7 @@ TODO: see above
 
             String desc = level.getDescription();
             if (desc == null) {
-                //TODO: currently this is always null
+                // TODO: currently this is always null
                 desc =
                     schemaName + " - "
                     + cubeName + " Cube - "
@@ -1483,16 +1487,16 @@ TODO: see above
                 // By definition, mondrian catalogs have only one
                 // schema. It is safe to use get(0)
                 final Schema schema = catalog.getSchemas().get(0);
-                //TODO: Is this cubes or tables? SQL Server returns what
+                // TODO: Is this cubes or tables? SQL Server returns what
                 // in foodmart are cube names for TABLE_NAME
                 for (Cube cube : sortedCubes(schema)) {
                     String cubeName = cube.getName();
                     String desc = cube.getDescription();
                     if (desc == null) {
-                        //TODO: currently this is always null
+                        // TODO: currently this is always null
                         desc = catalog.getName() + " - " + cubeName + " Cube";
                     }
-                    //TODO: SQL Server returns 1000000 for all tables
+                    // TODO: SQL Server returns 1000000 for all tables
                     int cardinality = 1000000;
                     String version = "null";
 
@@ -1746,7 +1750,7 @@ TODO: see above
             final Dimension.Type dimensionType = dimension.getDimensionType();
             row.set(e.DimensionType.name, dimensionType.xmlaOrdinal());
 
-            //Is this the number of primaryKey members there are??
+            // Is this the number of primaryKey members there are??
             // According to microsoft this is:
             //    "The number of members in the key attribute."
             // There may be a better way of doing this but
@@ -2042,7 +2046,7 @@ TODO: see above
             }
             row.set(e.Description.name, desc);
 
-            //TODO: only support:
+            // TODO: only support:
             // MD_STRUCTURE_FULLYBALANCED (0)
             // MD_STRUCTURE_RAGGEDBALANCED (1)
             row.set(e.Structure.name, extra.getHierarchyStructure(hierarchy));
@@ -2392,7 +2396,7 @@ TODO: see above
                 return;
             }
 
-            //TODO: currently this is always null
+            // TODO: currently this is always null
             String desc = member.getDescription();
             if (desc == null) {
                 desc =
@@ -3105,7 +3109,7 @@ TODO: see above
             row.set(e.DimensionUniqueName.name, dimension.getUniqueName());
             row.set(e.HierarchyUniqueName.name, hierarchy.getUniqueName());
             row.set(e.LevelUniqueName.name, level.getUniqueName());
-            //TODO: what is the correct value here
+            // TODO: what is the correct value here
             //row.set(MemberUniqueName.name, "");
 
             row.set(e.PropertyName.name, propertyName);
