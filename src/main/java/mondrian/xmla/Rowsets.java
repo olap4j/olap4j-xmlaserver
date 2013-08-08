@@ -680,8 +680,10 @@ public class Rowsets {
         {
             List<Enumeration> enumerators = getEnumerators();
             for (Enumeration enumerator : enumerators) {
-                final List<? extends Enum> values = enumerator.getValues();
-                for (Enum<?> value : values) {
+                @SuppressWarnings("unchecked")
+                final XmlaConstant.Dictionary<? extends Enum> dictionary =
+                    enumerator.getDictionary();
+                for (Enum value : dictionary.getValues()) {
                     Row row = new Row();
                     row.set(e.EnumName.name, enumerator.name);
                     row.set(e.EnumDescription.name, enumerator.description);
@@ -1774,7 +1776,7 @@ TODO: see above
             row.set(e.Description.name, desc);
             row.set(e.IsVirtual.name, false);
             // SQL Server always returns false
-            row.set(e.IsReadWrite.name, false);
+            row.set(e.IsReadwrite.name, false);
             // TODO: don't know what to do here
             // Are these the levels with uniqueMembers == true?
             // How are they mapped to specific column numbers?
@@ -2052,7 +2054,7 @@ TODO: see above
             row.set(e.Structure.name, extra.getHierarchyStructure(hierarchy));
 
             row.set(e.IsVirtual.name, false);
-            row.set(e.IsReadWrite.name, false);
+            row.set(e.IsReadwrite.name, false);
 
             // NOTE that SQL Server returns '0' not '1'.
             row.set(e.DimensionUniqueSettings.name, 0);

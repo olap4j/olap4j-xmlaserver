@@ -420,9 +420,7 @@ way too noisy
         MetadataRowset result = new MetadataRowset();
         final List<Column> colDefs =
             new ArrayList<Column>();
-        for (Column columnDefinition
-            : rowsetDefinition.columns)
-        {
+        for (Column columnDefinition : rowsetDefinition.columns) {
             if (columnDefinition.type == XmlaType.Rowset) {
                 // olap4j does not support the extended columns, e.g.
                 // Cube.Dimensions
