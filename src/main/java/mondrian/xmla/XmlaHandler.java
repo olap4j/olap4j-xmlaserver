@@ -1839,6 +1839,10 @@ public class XmlaHandler {
                 public boolean isVisible() {
                     return property.isVisible();
                 }
+
+                public Object getAnnotations() {
+                    throw new UnsupportedOperationException(); // TODO:
+                }
             };
         }
     }

@@ -415,6 +415,14 @@ public class Rowsets {
         public boolean isVisible() {
             return false;
         }
+
+        public Cube getBaseCube() {
+            return null;
+        }
+
+        public Object getAnnotations() {
+            return null;
+        }
     }
 
     static class DiscoverDatasourcesRowset extends Rowset<XmlaDatasource> {
