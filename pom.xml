@@ -5,8 +5,8 @@
   <!-- The basics. -->
   <groupId>org.olap4j</groupId>
   <artifactId>olap4j-xmlaserver</artifactId>
-  <version>0.0.1-SNAPSHOT</version>
-  <packaging>jar</packaging>
+  <version>0.0.2-SNAPSHOT</version>
+  <packaging>bundle</packaging>
 
   <!-- More project information. -->
   <name>olap4j-xmlaserver</name>
@@ -128,6 +128,15 @@
         <artifactId>maven-surefire-plugin</artifactId>
         <configuration>
           <excludes/>
+        </configuration>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.felix</groupId>
+        <artifactId>maven-bundle-plugin</artifactId>
+        <extensions>true</extensions>
+        <configuration>
+          <instructions>
+          </instructions>
         </configuration>
       </plugin>
     </plugins>
