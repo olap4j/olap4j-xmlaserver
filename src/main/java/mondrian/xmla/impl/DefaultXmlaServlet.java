@@ -4,7 +4,7 @@
 // http://www.eclipse.org/legal/epl-v10.html.
 // You must accept the terms of that agreement to use this software.
 //
-// Copyright (C) 2005-2011 Pentaho
+// Copyright (C) 2005-2014 Pentaho
 // All Rights Reserved.
 */
 package mondrian.xmla.impl;
@@ -655,8 +655,8 @@ public abstract class DefaultXmlaServlet extends XmlaServlet {
                 }
                 outputStream.flush();
             } catch (IOException ioe) {
-                LOGGER.error(
-                    "Damn exception when transferring bytes over sockets",
+                LOGGER.warn(
+                    "Exception when transferring bytes over sockets",
                     ioe);
             }
         } catch (XmlaException xex) {
