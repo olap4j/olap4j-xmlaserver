@@ -1675,6 +1675,7 @@ public class XmlaHandler {
                 final Enumeration.ResponseMimeType responseMimeType =
                     getResponseMimeType(request);
                 final MDDataSet dataSet;
+                final Connection connectionToClose = connection;
                 if (format == Format.Multidimensional) {
                     dataSet =
                         new MDDataSet_Multidimensional(
@@ -1682,10 +1683,18 @@ public class XmlaHandler {
                             cellSet,
                             content != Content.DataIncludeDefaultSlicer,
                             responseMimeType
-                            == Enumeration.ResponseMimeType.JSON);
+                            == Enumeration.ResponseMimeType.JSON) {
+                        @Override public void close() throws SQLException {
+                            connectionToClose.close();
+                        }
+                    };
                 } else {
                     dataSet =
-                        new MDDataSet_Tabular(cellSet);
+                        new MDDataSet_Tabular(cellSet) {
+                        @Override public void close() throws SQLException {
+                            connectionToClose.close();
+                        }
+                    };
                 }
                 success = true;
                 return dataSet;
