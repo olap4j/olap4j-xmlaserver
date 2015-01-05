@@ -97,7 +97,7 @@
       <uniqueVersion>false</uniqueVersion>
       <id>pentaho</id>
       <name>Pentaho Open Repository</name>
-      <url>http://repository.pentaho.org/artifactory/pentaho</url>
+      <url>http://ivy-nexus.pentaho.org/content/groups/omni</url>
       <layout>default</layout>
     </repository>
   </distributionManagement>
@@ -105,7 +105,7 @@
   <repositories>
     <repository>
       <id>pentaho</id>
-      <url>http://repo.pentaho.org/artifactory/repo/</url>
+      <url>http://ivy-nexus.pentaho.org/content/groups/omni</url>
       <snapshots>
         <enabled>true</enabled>
       </snapshots>
