@@ -14,15 +14,12 @@ import mondrian.xmla.impl.DefaultSaxWriter;
 
 import org.olap4j.xmla.server.impl.CompositeList;
 import org.olap4j.xmla.server.impl.Util;
-
 import org.apache.log4j.Logger;
-
 import org.olap4j.*;
 import org.olap4j.impl.Olap4jUtil;
 import org.olap4j.metadata.*;
 import org.olap4j.metadata.Property.StandardCellProperty;
 import org.olap4j.metadata.Property.StandardMemberProperty;
-
 import org.xml.sax.SAXException;
 
 import java.io.PrintWriter;
@@ -1675,6 +1672,8 @@ public class XmlaHandler {
                 final Enumeration.ResponseMimeType responseMimeType =
                     getResponseMimeType(request);
                 final MDDataSet dataSet;
+                {
+                final Connection connectionToClose = connection;
                 if (format == Format.Multidimensional) {
                     dataSet =
                         new MDDataSet_Multidimensional(
@@ -1682,10 +1681,21 @@ public class XmlaHandler {
                             cellSet,
                             content != Content.DataIncludeDefaultSlicer,
                             responseMimeType
-                            == Enumeration.ResponseMimeType.JSON);
+                            == Enumeration.ResponseMimeType.JSON){
+                        @Override
+                        public void close() throws SQLException {
+                            connectionToClose.close();
+                        }
+                    };
                 } else {
                     dataSet =
-                        new MDDataSet_Tabular(cellSet);
+                        new MDDataSet_Tabular(cellSet){
+                        @Override
+                        public void close() throws SQLException {
+                            connectionToClose.close();
+                        }
+                    };
+                }
                 }
                 success = true;
                 return dataSet;
