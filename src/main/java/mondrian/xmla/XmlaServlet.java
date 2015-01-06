@@ -155,6 +155,7 @@ public abstract class XmlaServlet
         Phase phase = Phase.VALIDATE_HTTP_HEAD;
         Enumeration.ResponseMimeType mimeType =
             Enumeration.ResponseMimeType.SOAP;
+        Map<String, Object> context = new HashMap<String, Object>();
 
         try {
             if (charEncoding != null) {
@@ -171,8 +172,6 @@ public abstract class XmlaServlet
             }
 
             response.setContentType(mimeType.getMimeType());
-
-            Map<String, Object> context = new HashMap<String, Object>();
 
             try {
                 if (LOGGER.isDebugEnabled()) {
@@ -192,7 +191,7 @@ public abstract class XmlaServlet
                     "Errors when invoking callbacks validateHttpHeader", xex);
                 handleFault(response, responseSoapParts, phase, xex);
                 phase = Phase.SEND_ERROR;
-                marshallSoapMessage(response, responseSoapParts, mimeType);
+                marshallSoapMessage(response, responseSoapParts, mimeType, context);
                 return;
             } catch (Exception ex) {
                 LOGGER.error(
@@ -206,7 +205,7 @@ public abstract class XmlaServlet
                         CHH_FAULT_FS,
                         ex));
                 phase = Phase.SEND_ERROR;
-                marshallSoapMessage(response, responseSoapParts, mimeType);
+                marshallSoapMessage(response, responseSoapParts, mimeType, context);
                 return;
             }
 
@@ -249,7 +248,7 @@ public abstract class XmlaServlet
                 LOGGER.error("Unable to unmarshall SOAP message", xex);
                 handleFault(response, responseSoapParts, phase, xex);
                 phase = Phase.SEND_ERROR;
-                marshallSoapMessage(response, responseSoapParts, mimeType);
+                marshallSoapMessage(response, responseSoapParts, mimeType, context);
                 return;
             }
 
@@ -270,7 +269,7 @@ public abstract class XmlaServlet
                 LOGGER.error("Errors when handling XML/A message", xex);
                 handleFault(response, responseSoapParts, phase, xex);
                 phase = Phase.SEND_ERROR;
-                marshallSoapMessage(response, responseSoapParts, mimeType);
+                marshallSoapMessage(response, responseSoapParts, mimeType, context);
                 return;
             }
 
@@ -289,7 +288,7 @@ public abstract class XmlaServlet
                 LOGGER.error("Errors when invoking callbacks preaction", xex);
                 handleFault(response, responseSoapParts, phase, xex);
                 phase = Phase.SEND_ERROR;
-                marshallSoapMessage(response, responseSoapParts, mimeType);
+                marshallSoapMessage(response, responseSoapParts, mimeType, context);
                 return;
             } catch (Exception ex) {
                 LOGGER.error("Errors when invoking callbacks preaction", ex);
@@ -302,7 +301,7 @@ public abstract class XmlaServlet
                         CPREA_FAULT_FS,
                         ex));
                 phase = Phase.SEND_ERROR;
-                marshallSoapMessage(response, responseSoapParts, mimeType);
+                marshallSoapMessage(response, responseSoapParts, mimeType, context);
                 return;
             }
 
@@ -323,7 +322,7 @@ public abstract class XmlaServlet
                 LOGGER.error("Errors when handling XML/A message", xex);
                 handleFault(response, responseSoapParts, phase, xex);
                 phase = Phase.SEND_ERROR;
-                marshallSoapMessage(response, responseSoapParts, mimeType);
+                marshallSoapMessage(response, responseSoapParts, mimeType, context);
                 return;
             }
 
@@ -346,7 +345,7 @@ public abstract class XmlaServlet
                 LOGGER.error("Errors when invoking callbacks postaction", xex);
                 handleFault(response, responseSoapParts, phase, xex);
                 phase = Phase.SEND_ERROR;
-                marshallSoapMessage(response, responseSoapParts, mimeType);
+                marshallSoapMessage(response, responseSoapParts, mimeType, context);
                 return;
             } catch (Exception ex) {
                 LOGGER.error("Errors when invoking callbacks postaction", ex);
@@ -360,7 +359,7 @@ public abstract class XmlaServlet
                         CPOSTA_FAULT_FS,
                         ex));
                 phase = Phase.SEND_ERROR;
-                marshallSoapMessage(response, responseSoapParts, mimeType);
+                marshallSoapMessage(response, responseSoapParts, mimeType, context);
                 return;
             }
 
@@ -368,17 +367,17 @@ public abstract class XmlaServlet
 
             try {
                 response.setStatus(HttpServletResponse.SC_OK);
-                marshallSoapMessage(response, responseSoapParts, mimeType);
+                marshallSoapMessage(response, responseSoapParts, mimeType, context);
             } catch (XmlaException xex) {
                 LOGGER.error("Errors when handling XML/A message", xex);
                 handleFault(response, responseSoapParts, phase, xex);
                 phase = Phase.SEND_ERROR;
-                marshallSoapMessage(response, responseSoapParts, mimeType);
+                marshallSoapMessage(response, responseSoapParts, mimeType, context);
             }
         } catch (Throwable t) {
             LOGGER.error("Unknown Error when handling XML/A message", t);
             handleFault(response, responseSoapParts, phase, t);
-            marshallSoapMessage(response, responseSoapParts, mimeType);
+            marshallSoapMessage(response, responseSoapParts, mimeType, context);
         }
     }
 
@@ -416,7 +415,8 @@ public abstract class XmlaServlet
     protected abstract void marshallSoapMessage(
         HttpServletResponse response,
         byte[][] responseSoapParts,
-        Enumeration.ResponseMimeType responseMimeType)
+        Enumeration.ResponseMimeType responseMimeType,
+        Map<String, Object> context)
         throws XmlaException;
 
     /**
