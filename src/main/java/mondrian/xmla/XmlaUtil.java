@@ -374,6 +374,10 @@ way too noisy
                 throw new UnsupportedOperationException();
             }
 
+            public boolean isCancel() {
+                throw new UnsupportedOperationException();
+            }
+
             public Format getFormat() {
                 throw new UnsupportedOperationException();
             }

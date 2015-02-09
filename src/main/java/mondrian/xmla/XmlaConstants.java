@@ -44,6 +44,8 @@ public interface XmlaConstants {
     public static final String NS_SQL = "urn:schemas-microsoft-com:xml-sql";
     public static final String NS_XMLA_EX =
         "urn:schemas-microsoft-com:xml-analysis:exception";
+    public static final String NS_XMLA_MS_EXTENSIONS =
+        "http://schemas.microsoft.com/analysisservices/2003/engine";
 
     public static final String NS_SOAP_SECEXT =
         "http://schemas.xmlsoap.org/ws/2002/04/secext";
