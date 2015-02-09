@@ -765,9 +765,11 @@ public class XmlaHandler {
     }
 
     public void closeQueryResult(XmlaRequest request) {
-        QueryResult result;
-        synchronized(queryResultLookup) {
-            result = queryResultLookup.remove(request);
+        QueryResult result = null;
+        if (queryResultLookup != null) {
+            synchronized(queryResultLookup) {
+                result = queryResultLookup.remove(request);
+            }
         }
         if (result != null) {
             try {
