@@ -14,15 +14,12 @@ import mondrian.xmla.impl.DefaultSaxWriter;
 
 import org.olap4j.xmla.server.impl.CompositeList;
 import org.olap4j.xmla.server.impl.Util;
-
 import org.apache.log4j.Logger;
-
 import org.olap4j.*;
 import org.olap4j.impl.Olap4jUtil;
 import org.olap4j.metadata.*;
 import org.olap4j.metadata.Property.StandardCellProperty;
 import org.olap4j.metadata.Property.StandardMemberProperty;
-
 import org.xml.sax.SAXException;
 
 import java.io.PrintWriter;
@@ -662,6 +659,7 @@ public class XmlaHandler {
                         + "through"));
             }
         } else {
+            /** Excell needs to support Native
             final String formatName =
                 properties.get(PropertyDefinition.Format.name());
             if (formatName != null) {
@@ -673,7 +671,7 @@ public class XmlaHandler {
                         "<Format>: only 'Multidimensional', 'Tabular' "
                         + "currently supported");
                 }
-            }
+            }*/
             final String axisFormatName =
                 properties.get(PropertyDefinition.AxisFormat.name());
             if (axisFormatName != null) {
@@ -1301,6 +1299,7 @@ public class XmlaHandler {
     }
 
     static void writeEmptyDatasetXmlSchema(SaxWriter writer, SetType setType) {
+        /* Excel
         String setNsXmla = NS_XMLA_ROWSET;
         writer.startElement(
             "xsd:schema",
@@ -1316,6 +1315,7 @@ public class XmlaHandler {
             "name", "root");
 
         writer.endElement(); // xsd:schema
+        */
     }
 
     private QueryResult executeDrillThroughQuery(XmlaRequest request)
@@ -1654,6 +1654,8 @@ public class XmlaHandler {
         try {
             connection =
                 getConnection(request, Collections.<String, String>emptyMap());
+            // @see https://github.com/olap4j/olap4j-xmlaserver/issues/9
+            final Connection closable = connection;
             final XmlaHandler.XmlaExtra extra = connectionFactory.getExtra();
             extra.setPreferList(connection);
             try {
@@ -1675,18 +1677,52 @@ public class XmlaHandler {
                 final Enumeration.ResponseMimeType responseMimeType =
                     getResponseMimeType(request);
                 final MDDataSet dataSet;
-                if (format == Format.Multidimensional) {
+                
+                /* Excell needs to support Native
+                 * if (format == Format.Multidimensional) {
                     dataSet =
                         new MDDataSet_Multidimensional(
                             extra,
                             cellSet,
                             content != Content.DataIncludeDefaultSlicer,
                             responseMimeType
-                            == Enumeration.ResponseMimeType.JSON);
+                            == Enumeration.ResponseMimeType.JSON){
+                        @Override /// @see https://github.com/olap4j/olap4j-xmlaserver/issues/9 
+                        public void close() throws SQLException {
+                            closable.close();
+                        }
+                    };
                 } else {
                     dataSet =
-                        new MDDataSet_Tabular(cellSet);
-                }
+                        new MDDataSet_Tabular(cellSet){
+                        @Override /// @see https://github.com/olap4j/olap4j-xmlaserver/issues/9 
+                        public void close() throws SQLException {
+                            closable.close();
+                        }
+                    };
+                }*/
+                if (format == Format.Tabular) {
+                    dataSet =
+                               new MDDataSet_Tabular(cellSet){
+                        @Override /** @see https://github.com/olap4j/olap4j-xmlaserver/issues/9 */
+                        public void close() throws SQLException {
+                            closable.close();
+                        }
+                    };
+                   } else {
+                    dataSet =
+                               new MDDataSet_Multidimensional(
+                                   extra,
+                                   cellSet,
+                                   content != Content.DataIncludeDefaultSlicer,
+                                   responseMimeType
+                                   == Enumeration.ResponseMimeType.JSON){
+                        @Override /** @see https://github.com/olap4j/olap4j-xmlaserver/issues/9 */
+                        public void close() throws SQLException {
+                            closable.close();
+                        }
+                    };
+                   }
                 success = true;
                 return dataSet;
             } catch (XmlaException ex) {
@@ -1797,7 +1833,7 @@ public class XmlaHandler {
         protected MDDataSet(CellSet cellSet) {
             this.cellSet = cellSet;
         }
-
+        /** https://github.com/olap4j/olap4j-xmlaserver/issues/9 it closes nothing */
         public void close() throws SQLException {
             cellSet.getStatement().getConnection().close();
         }

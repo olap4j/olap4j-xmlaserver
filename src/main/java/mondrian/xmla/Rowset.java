@@ -230,12 +230,16 @@ abstract class Rowset implements XmlaConstants {
                 e);
         } finally {
             handler.connectionFactory.endRequest(request1);
+            
             if (connection != null && ourConnection) {
+                LOGGER.debug("closing "+connection);
                 try {
                     connection.close();
                 } catch (SQLException e) {
                     // ignore
                 }
+            }else{
+                LOGGER.debug("refuse to close "+connection);
             }
         }
     }
