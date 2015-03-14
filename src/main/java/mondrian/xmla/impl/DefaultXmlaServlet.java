@@ -282,10 +282,11 @@ public abstract class DefaultXmlaServlet extends XmlaServlet {
 
                 // Make sure Element has mustUnderstand=1 attribute.
                 Attr attr = e.getAttributeNode(SOAP_MUST_UNDERSTAND_ATTR);
-                boolean mustUnderstandValue =
-                    attr != null
-                    && attr.getValue() != null
-                    && attr.getValue().equals("1");
+                boolean mustUnderstandValue = true;
+                   // Excel
+                   // attr != null
+                   // && attr.getValue() != null
+                   // && attr.getValue().equals("1");
 
                 if (!mustUnderstandValue) {
                     continue;
@@ -625,10 +626,6 @@ public abstract class DefaultXmlaServlet extends XmlaServlet {
                 LOGGER.debug(buf.toString());
             }
 
-            if (LOGGER.isDebugEnabled()) {
-                StringBuilder buf = new StringBuilder();
-                buf.append("XML/A response content").append(nl);
-            }
             try {
                 int bufferSize = 4096;
                 ByteBuffer buffer = ByteBuffer.allocate(bufferSize);

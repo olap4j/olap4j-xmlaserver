@@ -4,13 +4,13 @@
 
   <!-- The basics. -->
   <groupId>org.olap4j</groupId>
-  <artifactId>olap4j-xmlaserver</artifactId>
+  <artifactId>olap4j-xmlaserver-excel</artifactId>
   <version>TRUNK-SNAPSHOT</version>
-  <packaging>bundle</packaging>
 
   <!-- More project information. -->
   <name>olap4j-xmlaserver</name>
-  <description>XML for Analysis (XMLA) server based upon olap4j connections</description>
+  <description>XML for Analysis (XMLA) server based upon olap4j connections
+with excel fixes</description>
   <url>http://github.com/olap4j/olap4j-xmlaserver</url>
   <inceptionYear>2012</inceptionYear>
   <organization>

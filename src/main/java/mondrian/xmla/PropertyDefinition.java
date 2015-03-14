@@ -229,13 +229,50 @@ public enum PropertyDefinition {
         XmlaConstants.Access.Read,
         "false",
         XmlaConstants.Method.DISCOVER_AND_EXECUTE,
-        "");
+        ""),
+    
+    //excell support
+    DbpropMsmdMDXCompatibility(
+            RowsetDefinition.Type.Integer,
+            null,
+            XmlaConstants.Access.ReadWrite,
+            "1",
+            XmlaConstants.Method.DISCOVER_AND_EXECUTE,
+            "DbpropMsmdMDXCompatibility" ),
+                 
+           MdxMissingMemberMode(
+            RowsetDefinition.Type.String,
+            null,
+            XmlaConstants.Access.ReadWrite,
+            "Error",
+            XmlaConstants.Method.DISCOVER_AND_EXECUTE,
+            "DbpropMsmdSubqueries" ),
+
+           SafetyOptions(
+            RowsetDefinition.Type.Integer,
+            null,
+            XmlaConstants.Access.ReadWrite,
+            "",
+            XmlaConstants.Method.DISCOVER_AND_EXECUTE,
+            "SafetyOptions" ),
+
+            MdpropMdxDrillFunctions(
+            RowsetDefinition.Type.Integer,
+            null,
+            XmlaConstants.Access.Read,
+            "3",
+            XmlaConstants.Method.DISCOVER_AND_EXECUTE,
+            "A bitmask indicating support for drilldown and drillup groups of functions. " )
+
+            ;
+            
 
     final RowsetDefinition.Type type;
     final Set<? extends Enum> enumSet;
     final XmlaConstants.Access access;
     final XmlaConstants.Method usage;
-    final String value;
+    /** it smells. is needed to suport excell*/
+    volatile String value;
     final String description;
 
     PropertyDefinition(
@@ -267,6 +304,12 @@ public enum PropertyDefinition {
      */
     public String getDescription() {
         return description;
+    }
+    
+    /** Excelt support. Need to set current catalog.
+     * it smells.*/
+    public void setValue(String v){
+        this.value=v;
     }
 }
 
