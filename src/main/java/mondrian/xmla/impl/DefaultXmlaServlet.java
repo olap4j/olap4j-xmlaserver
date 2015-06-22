@@ -85,7 +85,7 @@ public abstract class DefaultXmlaServlet extends XmlaServlet {
             if (initMaxResultsToDefer != null) {
                 try {
                     this.maxResultsToRetain =
-                        Integer.parseint(initMaxResultsToDefer);
+                        Integer.parseInt(initMaxResultsToDefer);
                 } catch (NumberFormatException nfe) {
                     LOGGER.warn("Max results to defer servlet parameter must be an integer.", nfe);
                     this.maxResultsToRetain = DEFAULT_MAX_RESULTS_TO_DEFER;
