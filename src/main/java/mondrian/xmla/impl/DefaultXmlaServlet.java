@@ -728,7 +728,7 @@ public abstract class DefaultXmlaServlet extends XmlaServlet {
     }
 
     protected void streamBody(
-        HttpSerlvetResponse response,
+        HttpServletResponse response,
         OutputStream os,
         Map<String, Object> context)
     {
@@ -750,7 +750,7 @@ public abstract class DefaultXmlaServlet extends XmlaServlet {
         }
 
         XmlaResponse xmlaResponse =
-            new DefualtXmlaResponse(
+            new DefaultXmlaResponse(
                 os, response.getCharacterEncoding(), responseMimeType);
         getXmlaHandler().writeQueryResult(xmlaRequest, xmlaResponse.getWriter());
     }

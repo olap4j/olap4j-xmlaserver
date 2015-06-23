@@ -629,7 +629,7 @@ public class XmlaHandler {
                         } catch (Exception e) {
                             //ignore
                         }
-                        return true
+                        return true;
                     }
                     return false;
                 }
@@ -746,7 +746,7 @@ public class XmlaHandler {
             throw re;
         }
         if (streamExecuteResults) {
-            synchronized(queryLookup) {
+            synchronized(queryResultLookup) {
                 queryResultLookup.put(request, result);
             }
         } else {
