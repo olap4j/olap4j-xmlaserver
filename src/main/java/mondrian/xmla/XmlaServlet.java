@@ -16,6 +16,7 @@ import org.w3c.dom.Element;
 
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
+import java.sql.SQLException;
 import java.util.*;
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
@@ -38,9 +39,11 @@ public abstract class XmlaServlet
         "OptionalDataSourceConfig";
     public static final String PARAM_CHAR_ENCODING = "CharacterEncoding";
     public static final String PARAM_CALLBACKS = "Callbacks";
+    public static final String PARAM_CANCEL_SQL_STATE = "CancelSqlState";
 
     protected XmlaHandler xmlaHandler = null;
     protected String charEncoding = null;
+    protected final HashSet<String> cancelSqlStateSet = new HashSet<String>();
     private final List<XmlaRequestCallback> callbackList =
         new ArrayList<XmlaRequestCallback>();
 
@@ -95,6 +98,8 @@ public abstract class XmlaServlet
         // init: callbacks
         initCallbacks(servletConfig);
 
+        initCancelSqlState(servletConfig);
+
         this.connectionFactory = createConnectionFactory(servletConfig);
     }
 
@@ -131,6 +136,21 @@ public abstract class XmlaServlet
      */
     protected final List<XmlaRequestCallback> getCallbacks() {
         return Collections.unmodifiableList(callbackList);
+    }
+
+    private boolean isCancelException(Throwable t) {
+        if (cancelSqlStateSet == null || cancelSqlStateSet.isEmpty()) {
+            return false;
+        }
+
+        if (t instanceof SQLException) {
+            String sqlState = ((SQLException) t).getSQLState();
+            return cancelSqlStateSet.contains(sqlState);
+        } else if (t.getCause() != null) {
+            return isCancelException(t.getCause());
+        } else {
+            return false;
+        }
     }
 
     /**
@@ -320,7 +340,11 @@ public abstract class XmlaServlet
                     responseSoapParts,
                     context);
             } catch (XmlaException xex) {
-                LOGGER.error("Errors when handling XML/A message", xex);
+                if (isCancelException(xex)) {
+                    LOGGER.info("XML/A request canceled", xex);
+                } else {
+                    LOGGER.error("Errors when handling XML/A message", xex);
+                }
                 handleFault(response, responseSoapParts, phase, xex);
                 phase = Phase.SEND_ERROR;
                 marshallSoapMessage(response, responseSoapParts, mimeType);
@@ -438,6 +462,22 @@ public abstract class XmlaServlet
         } else {
             this.charEncoding = null;
             LOGGER.warn("Use default character encoding from HTTP client");
+        }
+    }
+
+    /**
+     * Initialize possible cancel sql states
+     */
+    protected void initCancelSqlState(ServletConfig servletConfig) {
+        String paramValue = servletConfig.getInitParameter(
+            PARAM_CANCEL_SQL_STATE);
+        if (paramValue != null) {
+            for (String sqlState : paramValue.split(",")) {
+                sqlState = sqlState.trim();
+                if (sqlState.length() > 0) {
+                    cancelSqlStateSet.add(sqlState);
+                }
+            }
         }
     }
 

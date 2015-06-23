@@ -790,30 +790,5 @@ public abstract class DefaultXmlaServlet extends XmlaServlet {
 
         responseSoapParts[1] = osBuf.toByteArray();
     }
-
-    private SessionInfo getSessionInfo(String sessionId) {
-        if (sessionId == null) {
-            return null;
-        }
-
-        SessionInfo sessionInfo = null;
-
-        synchronized (sessionInfos) {
-            sessionInfo = sessionInfos.get(sessionId);
-        }
-
-        if (sessionInfo == null) {
-            LOGGER.error(
-                "No login credentials for found for session ["+
-                sessionId + "]");
-        } else {
-            LOGGER.debug(
-                "Found credentials for session id ["
-                + sessionId
-                + "], username=[" + sessionInfo.user
-                + "] in servlet cache");
-        }
-        return sessionInfo;
-    }
 }
 // End DefaultXmlaServlet.java
