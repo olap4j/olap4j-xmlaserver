@@ -62,6 +62,7 @@
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 
+    <apache-rat-plugin.version>0.11</apache-rat-plugin.version>
     <commons-dbcp.version>1.2.1</commons-dbcp.version>
     <log4j.version>1.2.14</log4j.version>
     <maven-compiler-plugin.version>2.3.2</maven-compiler-plugin.version>
@@ -150,6 +151,27 @@
     </pluginManagement>
 
     <plugins>
+      <plugin>
+        <groupId>org.apache.rat</groupId>
+        <artifactId>apache-rat-plugin</artifactId>
+        <executions>
+          <execution>
+            <phase>verify</phase>
+            <goals>
+              <goal>check</goal>
+            </goals>
+          </execution>
+        </executions>
+        <configuration>
+          <excludes>
+            <exclude>**/*.md</exclude>
+            <exclude>.idea</exclude>
+            <exclude>src/main/java/mondrian/**</exclude>
+            <exclude>doc/*</exclude>
+            <exclude>.travis.yml</exclude>
+          </excludes>
+        </configuration>
+      </plugin>
       <plugin>
         <artifactId>maven-compiler-plugin</artifactId>
         <configuration>
