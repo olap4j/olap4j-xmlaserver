@@ -2,3 +2,6 @@
 target
 .idea/
 olap4j-xmlaserver.iml
+
+# produced by sortpom
+pom.xml.bak
