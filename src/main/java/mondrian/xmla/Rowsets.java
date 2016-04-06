@@ -5,7 +5,7 @@
 // You must accept the terms of that agreement to use this software.
 //
 // Copyright (C) 2003-2005 Julian Hyde
-// Copyright (C) 2005-2013 Pentaho
+// Copyright (C) 2005-2016 Pentaho
 // All Rights Reserved.
 */
 package mondrian.xmla;
@@ -420,14 +420,17 @@ public class Rowsets {
             return null;
         }
 
-        public Object getAnnotations() {
-            return null;
+        public boolean isWrapperFor(Class<?> iface) {
+            return iface.isInstance(this);
         }
+
+        public <T> T unwrap(Class<T> iface) {
+        return iface.cast(this);
+      }
     }
 
     static class DiscoverDatasourcesRowset extends Rowset<XmlaDatasource> {
-        public DiscoverDatasourcesRowset(
-            XmlaRequest request, XmlaHandler handler)
+        DiscoverDatasourcesRowset(XmlaRequest request, XmlaHandler handler)
         {
             super(XmlaDatasource.INSTANCE, request, handler);
         }
@@ -484,9 +487,7 @@ public class Rowsets {
     static class DiscoverSchemaRowsetsRowset
         extends Rowset<XmlaSchemaRowset>
     {
-        public DiscoverSchemaRowsetsRowset(
-            XmlaRequest request, XmlaHandler handler)
-        {
+        DiscoverSchemaRowsetsRowset(XmlaRequest request, XmlaHandler handler) {
             super(XmlaSchemaRowset.INSTANCE, request, handler);
         }
 
@@ -1552,7 +1553,7 @@ TODO: see above
         }
     }
 
-    public static class MdschemaCubesRowset extends Rowset<XmlaCube> {
+    static class MdschemaCubesRowset extends Rowset<XmlaCube> {
         private final Util.Predicate1<Catalog> catalogNameCond;
         private final Util.Predicate1<Schema> schemaNameCond;
         private final Util.Predicate1<Cube> cubeNameCond;
@@ -1591,7 +1592,9 @@ TODO: see above
                         row.set(e.CatalogName.name, catalog.getName());
                         row.set(e.SchemaName.name, schema.getName());
                         row.set(e.CubeName.name, cube.getName());
-                        row.set(e.CubeType.name, extra.getCubeType(cube));
+                        row.set(
+                            e.CubeType.name,
+                            extra.getCubeType(cube).xmlaName());
                         //row.set(CubeGuid.name, "");
                         //row.set(CreatedOn.name, "");
                         //row.set(LastSchemaUpdate.name, "");
@@ -1823,35 +1826,36 @@ TODO: see above
         }
     }
 
-    public static class MdschemaFunctionsRowset
+    /**
+     * http://www.csidata.com/custserv/onlinehelp/VBSdocs/vbs57.htm
+     */
+    public enum VarType {
+        Empty("Uninitialized (default)"),
+        Null("Contains no valid data"),
+        Integer("Integer subtype"),
+        Long("Long subtype"),
+        Single("Single subtype"),
+        Double("Double subtype"),
+        Currency("Currency subtype"),
+        Date("Date subtype"),
+        String("String subtype"),
+        Object("Object subtype"),
+        Error("Error subtype"),
+        Boolean("Boolean subtype"),
+        Variant("Variant subtype"),
+        DataObject("DataObject subtype"),
+        Decimal("Decimal subtype"),
+        Byte("Byte subtype"),
+        Array("Array subtype");
+
+       VarType(String description) {
+           Util.discard(description);
+       }
+    }
+
+    static class MdschemaFunctionsRowset
         extends Rowset<XmlaFunction>
     {
-        /**
-         * http://www.csidata.com/custserv/onlinehelp/VBSdocs/vbs57.htm
-         */
-        public enum VarType {
-            Empty("Uninitialized (default)"),
-            Null("Contains no valid data"),
-            Integer("Integer subtype"),
-            Long("Long subtype"),
-            Single("Single subtype"),
-            Double("Double subtype"),
-            Currency("Currency subtype"),
-            Date("Date subtype"),
-            String("String subtype"),
-            Object("Object subtype"),
-            Error("Error subtype"),
-            Boolean("Boolean subtype"),
-            Variant("Variant subtype"),
-            DataObject("DataObject subtype"),
-            Decimal("Decimal subtype"),
-            Byte("Byte subtype"),
-            Array("Array subtype");
-
-            VarType(String description) {
-                Util.discard(description);
-            }
-        }
 
         private final Util.Predicate1<String> functionNameCond;
 
@@ -2059,7 +2063,7 @@ TODO: see above
             // TODO: only support:
             // MD_STRUCTURE_FULLYBALANCED (0)
             // MD_STRUCTURE_RAGGEDBALANCED (1)
-            row.set(e.Structure.name, extra.getHierarchyStructure(hierarchy));
+            row.set(e.Structure.name, hierarchy.getStructure().xmlaOrdinal());
 
             row.set(e.IsVirtual.name, false);
             row.set(e.IsReadwrite.name, false);
@@ -2075,9 +2079,8 @@ TODO: see above
             // always true
             row.set(e.DimensionIsShared.name, true);
 
-            row.set(
-                e.ParentChild.name,
-                extra.isHierarchyParentChild(hierarchy));
+            row.set(e.HierarchyOrigin.name, hierarchy.isParentChild());
+            row.set(e.ParentChild.name, hierarchy.isParentChild());
             if (deep) {
                 row.set(
                     e.Levels.name,
@@ -2295,7 +2298,7 @@ TODO: see above
         }
     }
 
-    public static class MdschemaMeasuresRowset
+    static class MdschemaMeasuresRowset
         extends Rowset<XmlaMeasure>
     {
         private final Util.Predicate1<Catalog> catalogCond;
@@ -2429,7 +2432,8 @@ TODO: see above
             final XmlaHandler.XmlaExtra extra =
                 handler.connectionFactory.getExtra();
             row.set(
-                e.MeasureAggregator.name, extra.getMeasureAggregator(member));
+                e.MeasureAggregator.name,
+                extra.getMeasureAggregator(member).xmlaName());
 
             // DATA_TYPE DBType best guess is string
             XmlaConstants.DBType dbType = XmlaConstants.DBType.WSTR;

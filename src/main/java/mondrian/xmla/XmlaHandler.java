@@ -5,7 +5,7 @@
 // You must accept the terms of that agreement to use this software.
 //
 // Copyright (C) 2003-2005 Julian Hyde
-// Copyright (C) 2005-2013 Pentaho
+// Copyright (C) 2005-2016 Pentaho
 // All Rights Reserved.
 */
 package mondrian.xmla;
@@ -200,16 +200,16 @@ public class XmlaHandler {
     /**
      * Takes a DataType String (null, Integer, Numeric or non-null)
      * and Value Object (Integer, Double, String, other) and
-     * canonicalizes them to XSD data type and corresponding object.
-     * <p>
-     * If the input DataType is Integer, then it attempts to return
+     * canonizes them to XSD data type and corresponding object.
+     *
+     * <p>If the input DataType is Integer, then it attempts to return
      * an XSD_INT with value java.lang.Integer (and failing that an
      * XSD_LONG (java.lang.Long) or XSD_INTEGER (java.math.BigInteger)).
      * Worst case is the value loses precision with any integral
      * representation and must be returned as a decimal type (Double
      * or java.math.BigDecimal).
-     * <p>
-     * If the input DataType is Decimal, then it attempts to return
+     *
+     * <p>If the input DataType is Decimal, then it attempts to return
      * an XSD_DOUBLE with value java.lang.Double (and failing that an
      * XSD_DECIMAL (java.math.BigDecimal)).
      */
@@ -1840,8 +1840,17 @@ public class XmlaHandler {
                     return property.isVisible();
                 }
 
-                public Object getAnnotations() {
-                    throw new UnsupportedOperationException(); // TODO:
+                public boolean isWrapperFor(Class<?> iface)
+                    throws SQLException
+                {
+                    return property.isWrapperFor(iface)
+                        || iface.isInstance(this);
+                }
+
+                public <T> T unwrap(Class<T> iface) throws SQLException {
+                    return property.isWrapperFor(iface)
+                        ? property.unwrap(iface)
+                        : iface.cast(this);
                 }
             };
         }
@@ -1855,7 +1864,7 @@ public class XmlaHandler {
             XmlaUtil.ElementNameEncoder.INSTANCE;
         private XmlaExtra extra;
 
-        protected MDDataSet_Multidimensional(
+        MDDataSet_Multidimensional(
             XmlaExtra extra,
             CellSet cellSet,
             boolean omitDefaultSlicerInfo,
@@ -2408,7 +2417,7 @@ public class XmlaHandler {
         protected final String name;
         protected final String encodedName;
 
-        protected ColumnHandler(String name) {
+        ColumnHandler(String name) {
             this.name = name;
             this.encodedName =
                 XmlaUtil.ElementNameEncoder.INSTANCE.encode(name);
@@ -2477,12 +2486,10 @@ public class XmlaHandler {
         private final Level level;
         private final int memberOrdinal;
 
-        public MemberColumnHandler(
-            Property property, Level level, int memberOrdinal)
-        {
-            super(
-                level.getUniqueName() + "."
-                + Util.quoteMdxIdentifier(property.getName()));
+        MemberColumnHandler(Property property, Level level, int memberOrdinal) {
+          super(
+              level.getUniqueName() + "."
+              + Util.quoteMdxIdentifier(property.getName()));
             this.property = property;
             this.level = level;
             this.memberOrdinal = memberOrdinal;
@@ -2535,7 +2542,7 @@ public class XmlaHandler {
         private final Member[] members;
         private final ColumnHandler[] columnHandlers;
 
-        public MDDataSet_Tabular(CellSet cellSet) {
+        MDDataSet_Tabular(CellSet cellSet) {
             super(cellSet);
             final List<CellSetAxis> axes = cellSet.getAxes();
             axisCount = axes.size();
@@ -2972,11 +2979,7 @@ public class XmlaHandler {
 
         int getHierarchyCardinality(Hierarchy hierarchy) throws OlapException;
 
-        int getHierarchyStructure(Hierarchy hierarchy);
-
-        boolean isHierarchyParentChild(Hierarchy hierarchy);
-
-        int getMeasureAggregator(Member member);
+        Measure.Aggregator getMeasureAggregator(Member member);
 
         void checkMemberOrdinal(Member member) throws OlapException;
 
@@ -3007,7 +3010,7 @@ public class XmlaHandler {
          */
         String getSchemaId(Schema schema);
 
-        String getCubeType(Cube cube);
+        Cube.Type getCubeType(Cube cube);
 
         boolean isLevelUnique(Level level);
 
@@ -3034,15 +3037,6 @@ public class XmlaHandler {
          */
         List<Map<String, Object>> getDataSources(OlapConnection connection)
             throws OlapException;
-
-        /**
-         * Returns a map containing annotations on this element.
-         *
-         * @param element Element
-         * @return Annotation map, never null
-         */
-        Map<String, Object> getAnnotationMap(MetadataElement element)
-            throws SQLException;
 
         /**
          * Returns how the name of a hierarchy is to be printed in the
@@ -3154,19 +3148,13 @@ public class XmlaHandler {
         }
 
         public int getHierarchyStructure(Hierarchy hierarchy) {
-            return 0;
+            return hierarchy.getStructure().xmlaOrdinal();
         }
 
-        public boolean isHierarchyParentChild(Hierarchy hierarchy) {
-            return false;
-        }
-
-        public int getMeasureAggregator(Member member) {
-            final Measure.Aggregator aggregator =
-                member instanceof Measure
-                    ? ((Measure) member).getAggregator()
-                    : Measure.Aggregator.UNKNOWN;
-            return aggregator.xmlaOrdinal();
+        public Measure.Aggregator getMeasureAggregator(Member member) {
+            return member instanceof Measure
+                ? ((Measure) member).getAggregator()
+                : Measure.Aggregator.UNKNOWN;
         }
 
         public void checkMemberOrdinal(Member member) throws OlapException {
@@ -3187,9 +3175,8 @@ public class XmlaHandler {
             return schema.getName();
         }
 
-        public String getCubeType(Cube cube) {
-            Cube.Type type = Cube.Type.CUBE;
-            return type.xmlaName(); // e.g. "CUBE"
+        public Cube.Type getCubeType(Cube cube) {
+            return Cube.Type.CUBE;
         }
 
         public boolean isLevelUnique(Level level) {
@@ -3230,12 +3217,6 @@ public class XmlaHandler {
                     providerTypes,
                     "AuthenticationMode",
                     modes));
-        }
-
-        public Map<String, Object> getAnnotationMap(MetadataElement element)
-            throws SQLException
-        {
-            return Collections.emptyMap();
         }
 
         public String getHierarchyName(Hierarchy hierarchy) {

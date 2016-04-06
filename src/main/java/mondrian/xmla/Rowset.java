@@ -10,14 +10,14 @@
 */
 package mondrian.xmla;
 
+import org.olap4j.xmla.server.impl.Util;
+
+import org.apache.log4j.Logger;
+
 import org.olap4j.OlapConnection;
 import org.olap4j.impl.LcidLocale;
 import org.olap4j.metadata.Catalog;
 import org.olap4j.xmla.*;
-
-import org.olap4j.xmla.server.impl.Util;
-
-import org.apache.log4j.Logger;
 
 import java.sql.SQLException;
 import java.util.*;

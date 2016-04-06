@@ -4,7 +4,7 @@
 // http://www.eclipse.org/legal/epl-v10.html.
 // You must accept the terms of that agreement to use this software.
 //
-// Copyright (C) 2005-2013 Pentaho
+// Copyright (C) 2005-2016 Pentaho
 // All Rights Reserved.
 */
 package mondrian.xmla.impl;
@@ -12,8 +12,6 @@ package mondrian.xmla.impl;
 import mondrian.xmla.*;
 
 import org.olap4j.impl.Olap4jUtil;
-
-import org.olap4j.xmla.Enumeration;
 
 import org.w3c.dom.*;
 import org.xml.sax.InputSource;
@@ -413,14 +411,15 @@ public abstract class DefaultXmlaServlet extends XmlaServlet {
 
 
         // Generate a pseudo-random new session ID.
-        return Long.toString(17L * System.nanoTime()
-                +
-                3L * System.currentTimeMillis(), 35);
+        return Long.toString(
+            17L * System.nanoTime()
+            + 3L * System.currentTimeMillis(), 35);
     }
 
 
-    private static String getSessionIdFromRequest(Element e,
-            Map<String, Object> context)
+    private static String getSessionIdFromRequest(
+        Element e,
+        Map<String, Object> context)
         throws Exception
     {
         // extract the SessionId attrs value and put into context
