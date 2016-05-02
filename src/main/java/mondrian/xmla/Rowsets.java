@@ -2079,8 +2079,17 @@ TODO: see above
             // always true
             row.set(e.DimensionIsShared.name, true);
 
-            row.set(e.HierarchyOrigin.name, hierarchy.isParentChild());
+            row.set(
+                e.HierarchyOrigin.name,
+                hierarchy.isParentChild()
+                    ? Hierarchy.Origin.PARENT_CHILD
+                    : Hierarchy.Origin.ONLY_USER_DEFINED);
             row.set(e.ParentChild.name, hierarchy.isParentChild());
+            row.set(e.InstanceSelection.name, Hierarchy.InstanceSelection.NONE);
+            row.set(e.StructureType.name, Hierarchy.StructureType.Unknown);
+            row.set(
+                e.GroupingBehavior.name,
+                Hierarchy.GroupingBehavior.EncourageGrouping);
             if (deep) {
                 row.set(
                     e.Levels.name,
@@ -2433,7 +2442,7 @@ TODO: see above
                 handler.connectionFactory.getExtra();
             row.set(
                 e.MeasureAggregator.name,
-                extra.getMeasureAggregator(member).xmlaName());
+                extra.getMeasureAggregator(member).xmlaOrdinal());
 
             // DATA_TYPE DBType best guess is string
             XmlaConstants.DBType dbType = XmlaConstants.DBType.WSTR;
