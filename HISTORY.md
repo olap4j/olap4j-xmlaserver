@@ -2,14 +2,9 @@
 # olap4j-xmlaserver
 
 #############################################################################
-## Version 1.2.0
+## Version 1.3.0
 
-This is the first release of olap4j-xmlaserver. We have numbered it 1.2.0 so
-it aligns with the core olap4j releases. Future releases might not maintain
-this alignment.
-
-This release is also the first to be compatible with OSGI. For a list
-of the exported packages, please refer to the maven build file.
+This is a minor release that includes a fix to log level and exception message.
 
 #############################################################################
 
