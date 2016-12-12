@@ -693,6 +693,10 @@ public class XmlaHandler {
         XmlaResponse response)
         throws XmlaException
     {
+        if (request.isCancel()) {
+            cancelSession(request);
+            return;
+        }
         final Map<String, String> properties = request.getProperties();
 
         // Default responseMimeType is SOAP.
@@ -1318,6 +1322,32 @@ public class XmlaHandler {
         writer.endElement(); // xsd:schema
     }
 
+    private void cancelSession(XmlaRequest request) throws XmlaException {
+        String sessionId = request.getStatement();
+        if (!authorizeSessionCancel(sessionId, request)) {
+            throw new XmlaException(
+                CLIENT_FAULT_FC,
+                CHH_AUTHORIZATION_CODE,
+                CHH_AUTHORIZATION_FAULT_FS,
+                Util.newInternal(
+                    "Unauthorized request to cancel session " + sessionId));
+        }
+        XmlaSessionManager.getInstance().cancelSession(sessionId);
+    }
+
+    protected boolean authorizeSessionCancel(
+        String sessionId,
+        XmlaRequest request)
+    {
+        String[] credentials =
+            XmlaSessionManager.getInstance().getSessionCredentials(sessionId);
+        if (credentials == null || credentials.length == 0 || credentials[0] == null) {
+            return true;
+        }
+        return credentials[0].equals(request.getUsername()) && (
+            credentials[1] == null || credentials[1].equals(request.getPassword()));
+    }
+
     private QueryResult executeDrillThroughQuery(XmlaRequest request)
         throws XmlaException
     {
@@ -1336,16 +1366,19 @@ public class XmlaHandler {
         OlapStatement statement = null;
         ResultSet resultSet = null;
         try {
+            String mdx = request.getStatement();
             connection =
                 getConnection(request, Collections.<String, String>emptyMap());
             statement = connection.createStatement();
+            XmlaSessionManager.getInstance().addStatementToSession(
+                request.getSessionId(), statement, mdx);
             final XmlaHandler.XmlaExtra extra = connectionFactory.getExtra();
             final boolean enableRowCount = extra.isTotalCountEnabled();
             final int[] rowCountSlot = enableRowCount ? new int[]{0} : null;
             resultSet =
                 extra.executeDrillthrough(
                     statement,
-                    request.getStatement(),
+                    mdx,
                     advanced,
                     tabFields,
                     rowCountSlot);
@@ -1375,6 +1408,8 @@ public class XmlaHandler {
                 }
             }
             if (statement != null) {
+                XmlaSessionManager.getInstance().removeStatementFromSession(
+                    request.getSessionId(), statement);
                 try {
                     statement.close();
                 } catch (SQLException e) {
@@ -1658,6 +1693,8 @@ public class XmlaHandler {
             extra.setPreferList(connection);
             try {
                 statement = connection.prepareOlapStatement(mdx);
+                XmlaSessionManager.getInstance().addStatementToSession(
+                    request.getSessionId(), statement, mdx);
             } catch (XmlaException ex) {
                 throw ex;
             } catch (Exception ex) {
@@ -1708,6 +1745,10 @@ public class XmlaHandler {
                     ex);
             }
         } finally {
+            if (statement != null) {
+                XmlaSessionManager.getInstance().removeStatementFromSession(
+                    request.getSessionId(), statement);
+            }
             if (!success) {
                 if (cellSet != null) {
                     try {

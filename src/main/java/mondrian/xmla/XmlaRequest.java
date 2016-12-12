@@ -60,6 +60,11 @@ public interface XmlaRequest {
     boolean isDrillThrough();
 
     /**
+     * Indicate whether EXECUTE method is a session cancel.
+     */
+    boolean isCancel();
+
+    /**
      * The username to use to open the underlying olap4j connection.
      * Can be null.
      */

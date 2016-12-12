@@ -10,6 +10,8 @@
 */
 package mondrian.xmla;
 
+import mondrian.xmla.XmlaSessionManager.XmlaSession;
+
 import org.olap4j.xmla.server.impl.Composite;
 import org.olap4j.xmla.server.impl.Util;
 
@@ -62,7 +64,7 @@ public enum RowsetDefinition {
      * Not supported
      */
     DISCOVER_DATASOURCES(
-        0,
+        1,
         "Returns a list of XML for Analysis data sources available on the "
         + "server or Web Service.",
         new Column[] {
@@ -221,7 +223,7 @@ public enum RowsetDefinition {
      * Not supported
      */
     DISCOVER_PROPERTIES(
-        1,
+        4,
         "Returns a list of information and values about the requested "
         + "properties that are supported by the specified data source "
         + "provider.",
@@ -249,7 +251,7 @@ public enum RowsetDefinition {
      * Not supported
      */
     DISCOVER_KEYWORDS(
-        4,
+        5,
         "Returns an XML list of keywords reserved by the provider.",
         new Column[] {
             DiscoverKeywordsRowset.Keyword,
@@ -270,7 +272,7 @@ public enum RowsetDefinition {
      * Not supported
      */
     DISCOVER_LITERALS(
-        5,
+        6,
         "Returns information about literals supported by the provider.",
         new Column[] {
             DiscoverLiteralsRowset.LiteralName,
@@ -287,6 +289,55 @@ public enum RowsetDefinition {
     },
 
     /**
+     * 
+     */
+    DISCOVER_SESSIONS(
+        7,
+        "Returns information about the open sessions on the server.",
+        new Column[] {
+            DiscoverSessionsRowset.SessionId,
+            DiscoverSessionsRowset.SessionCommandCount,
+            DiscoverSessionsRowset.SessionElapsedTimeMs,
+            DiscoverSessionsRowset.SessionLastCommand,
+            DiscoverSessionsRowset.SessionLastCommandElapsedTimeMs,
+            DiscoverSessionsRowset.SessionLastCommandStartTime,
+            DiscoverSessionsRowset.SessionLastCommandEndTime,
+            DiscoverSessionsRowset.SessionStartTime,
+            DiscoverSessionsRowset.SessionStatus,
+        },
+        new Column[] {
+            DiscoverSessionsRowset.SessionId,
+        })
+    {
+        public Rowset getRowset(XmlaRequest request, XmlaHandler handler) {
+            return new DiscoverSessionsRowset(request, handler);
+        }
+    },
+
+    /**
+     * 
+     */
+    DISCOVER_COMMANDS(
+        8,
+        "Returns information about the currently executing or last executed commands in open sessions on the server.",
+        new Column[] {
+            DiscoverCommandsRowset.SessionId,
+            DiscoverCommandsRowset.SessionCommandCount,
+            DiscoverCommandsRowset.CommandStartTime,
+            DiscoverCommandsRowset.CommandElapsedTimeMs,
+            DiscoverCommandsRowset.CommandText,
+            DiscoverCommandsRowset.CommandEndTime,
+        },
+        new Column[] {
+            DiscoverCommandsRowset.SessionId,
+        })
+    {
+        public Rowset getRowset(XmlaRequest request, XmlaHandler handler) {
+            return new DiscoverCommandsRowset(request, handler);
+        }
+    },
+
+    /**
      *
      *
      *
@@ -295,7 +346,7 @@ public enum RowsetDefinition {
      * Not supported
      */
     DBSCHEMA_CATALOGS(
-        6,
+        9,
         "Identifies the physical attributes associated with catalogs "
         + "accessible from the provider.",
         new Column[] {
@@ -323,7 +374,7 @@ public enum RowsetDefinition {
      *    COLUMN_OLAP_TYPE
      */
     DBSCHEMA_COLUMNS(
-        7, null,
+        10, null,
         new Column[] {
             DbschemaColumnsRowset.TableCatalog,
             DbschemaColumnsRowset.TableSchema,
@@ -359,7 +410,7 @@ public enum RowsetDefinition {
      * Not supported
      */
     DBSCHEMA_PROVIDER_TYPES(
-        8, null,
+        11, null,
         new Column[] {
             DbschemaProviderTypesRowset.TypeName,
             DbschemaProviderTypesRowset.DataType,
@@ -385,7 +436,7 @@ public enum RowsetDefinition {
     },
 
     DBSCHEMA_SCHEMATA(
-        8, null,
+        12, null,
         new Column[] {
             DbschemaSchemataRowset.CatalogName,
             DbschemaSchemataRowset.SchemaName,
@@ -415,7 +466,7 @@ public enum RowsetDefinition {
      * Not supported
      */
     DBSCHEMA_TABLES(
-        9, null,
+        13, null,
         new Column[] {
             DbschemaTablesRowset.TableCatalog,
             DbschemaTablesRowset.TableSchema,
@@ -450,7 +501,7 @@ public enum RowsetDefinition {
      * Not supported
      */
     DBSCHEMA_TABLES_INFO(
-        10, null,
+        14, null,
         new Column[] {
             DbschemaTablesInfoRowset.TableCatalog,
             DbschemaTablesInfoRowset.TableSchema,
@@ -501,7 +552,7 @@ public enum RowsetDefinition {
      * Not supported
      */
     MDSCHEMA_ACTIONS(
-        11, null, new Column[] {
+        15, null, new Column[] {
             MdschemaActionsRowset.CatalogName,
             MdschemaActionsRowset.SchemaName,
             MdschemaActionsRowset.CubeName,
@@ -545,7 +596,7 @@ public enum RowsetDefinition {
      *   ANNOTATIONS
      */
     MDSCHEMA_CUBES(
-        12, null,
+        16, null,
         new Column[] {
             MdschemaCubesRowset.CatalogName,
             MdschemaCubesRowset.SchemaName,
@@ -601,7 +652,7 @@ public enum RowsetDefinition {
      *    Default restriction is a value of 1.
      */
     MDSCHEMA_DIMENSIONS(
-        13, null,
+        17, null,
         new Column[] {
             MdschemaDimensionsRowset.CatalogName,
             MdschemaDimensionsRowset.SchemaName,
@@ -656,7 +707,7 @@ public enum RowsetDefinition {
      *  CAPTION The display caption for the function.
      */
     MDSCHEMA_FUNCTIONS(
-        14, null,
+        18, null,
         new Column[] {
             MdschemaFunctionsRowset.FunctionName,
             MdschemaFunctionsRowset.Description,
@@ -709,7 +760,7 @@ public enum RowsetDefinition {
      *  INSTANCE_SELECTION
      */
     MDSCHEMA_HIERARCHIES(
-        15, null,
+        19, null,
         new Column[] {
             MdschemaHierarchiesRowset.CatalogName,
             MdschemaHierarchiesRowset.SchemaName,
@@ -788,7 +839,7 @@ public enum RowsetDefinition {
      *
      */
     MDSCHEMA_LEVELS(
-        16, null,
+        20, null,
         new Column[] {
             MdschemaLevelsRowset.CatalogName,
             MdschemaLevelsRowset.SchemaName,
@@ -854,7 +905,7 @@ public enum RowsetDefinition {
      *  DEFAULT_FORMAT_STRING
      */
     MDSCHEMA_MEASURES(
-        17, null,
+        21, null,
         new Column[] {
             MdschemaMeasuresRowset.CatalogName,
             MdschemaMeasuresRowset.SchemaName,
@@ -916,7 +967,7 @@ public enum RowsetDefinition {
      * Not supported
      */
     MDSCHEMA_MEMBERS(
-        18, null,
+        22, null,
         new Column[] {
             MdschemaMembersRowset.CatalogName,
             MdschemaMembersRowset.SchemaName,
@@ -1002,7 +1053,7 @@ public enum RowsetDefinition {
      *    PROPERTY_IS_VISIBLE
      */
     MDSCHEMA_PROPERTIES(
-        19, null,
+        23, null,
         new Column[] {
             MdschemaPropertiesRowset.CatalogName,
             MdschemaPropertiesRowset.SchemaName,
@@ -1046,7 +1097,7 @@ public enum RowsetDefinition {
      *    SET_DISPLAY_FOLDER
      */
     MDSCHEMA_SETS(
-        20, null,
+        24, null,
         new Column[] {
             MdschemaSetsRowset.CatalogName,
             MdschemaSetsRowset.SchemaName,
@@ -2106,6 +2157,248 @@ public enum RowsetDefinition {
                 break;
             default:
                 super.setProperty(propertyDef, value);
+            }
+        }
+    }
+
+    static class DiscoverSessionsRowset extends Rowset {
+        private final Util.Predicate1<String> sessionIdCond;
+        private final Util.Predicate1<Integer> sessionStatusCond;
+        private final Util.Predicate1<Long> sessionElapsedTimeMsCond;
+
+        DiscoverSessionsRowset(XmlaRequest request, XmlaHandler handler) {
+            super(DISCOVER_SESSIONS, request, handler);
+            sessionIdCond = makeCondition(SessionId);
+            sessionStatusCond = makeCondition(SessionStatus);
+            sessionElapsedTimeMsCond = makeCondition(SessionElapsedTimeMs);
+        }
+
+        private static final Column SessionId = new Column(
+            "SESSION_ID",
+            Type.String,
+            null,
+            Column.RESTRICTION,
+            Column.REQUIRED,
+            "The session unique identifier, as a GUID.");
+
+        private static final Column SessionCommandCount = new Column(
+            "SESSION_COMMAND_COUNT",
+            Type.Integer,
+            null,
+            Column.NOT_RESTRICTION,
+            Column.REQUIRED,
+            "The number of commands that started execution since the beginning of the session.");
+
+        private static final Column SessionElapsedTimeMs = new Column(
+            "SESSION_ELAPSED_TIME_MS",
+            Type.UnsignedLong,
+            null,
+            Column.RESTRICTION,
+            Column.REQUIRED,
+            "Elapsed time, in milliseconds, since the start of the session.");
+
+        private static final Column SessionLastCommand = new Column(
+            "SESSION_LAST_COMMAND",
+            Type.String,
+            null,
+            Column.NOT_RESTRICTION,
+            Column.OPTIONAL,
+            "The text of the current command executing or the last command executed.");
+
+        private static final Column SessionLastCommandElapsedTimeMs = new Column(
+            "SESSION_LAST_COMMAND_ELAPSED_TIME_MS",
+            Type.UnsignedLong,
+            null,
+            Column.NOT_RESTRICTION,
+            Column.OPTIONAL,
+            "The elapsed time, in milliseconds, since the start of SESSION_LAST_COMMAND.");
+
+        private static final Column SessionLastCommandStartTime = new Column(
+            "SESSION_LAST_COMMAND_START_TIME",
+            Type.DateTime,
+            null,
+            Column.NOT_RESTRICTION,
+            Column.OPTIONAL,
+            "The UTC server time at the moment the last command started executing.");
+
+        private static final Column SessionLastCommandEndTime = new Column(
+            "SESSION_LAST_COMMAND_END_TIME",
+            Type.DateTime,
+            null,
+            Column.NOT_RESTRICTION,
+            Column.OPTIONAL,
+            "The UTC server time at the moment the last command finished executing.");
+
+        private static final Column SessionStartTime = new Column(
+            "SESSION_START_TIME",
+            Type.DateTime,
+            null,
+            Column.NOT_RESTRICTION,
+            Column.REQUIRED,
+            "The date and time the session started as UTC time to the server.");
+
+        private static final Column SessionStatus = new Column(
+            "SESSION_STATUS",
+            Type.Integer,
+            null,
+            Column.RESTRICTION,
+            Column.REQUIRED,
+            "The activity status of the session.\n"
+            + "0 means \"Idle\": No current activity is ongoing.\n"
+            + "1 means \"Active\": The session is executing some requested task.\n"
+            + "2 means is \"Blocked\": The session is waiting for some resource to continue executing the suspended task.\n"
+            + "3 means \"Cancelled\": The session has been tagged as cancelled.");
+
+        @Override
+        protected boolean needConnection() {
+            return false;
+        }
+
+        @Override
+        protected void populateImpl(
+            XmlaResponse response, OlapConnection connection, List<Row> rows)
+                throws XmlaException
+        {
+            XmlaSessionManager manager = XmlaSessionManager.getInstance();
+            Map<String, XmlaSessionManager.XmlaSession> sessions = manager.getAllSessions();
+            long now = System.currentTimeMillis();
+            SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss");
+            formatter.setTimeZone(TimeZone.getTimeZone("UTC"));
+            for (String sessionId : sessions.keySet()) {
+                if (!sessionIdCond.test(sessionId)) {
+                    continue;
+                }
+                XmlaSessionManager.XmlaSession session = sessions.get(sessionId);
+                int totalCommands = session.getTotalCommandCount();
+                int currentCommands = session.getCurrentCommandCount();
+                int status;
+                if (session.isCancelled()) {
+                    status = 3;
+                } else if (currentCommands == 0) {
+                    status = 0;
+                } else {
+                    status = 1;
+                }
+                if (!sessionStatusCond.test(status)) {
+                    continue;
+                }
+                
+                long started = session.getStarted();
+                if (!sessionElapsedTimeMsCond.test(now - started)) {
+                    continue;
+                }
+                String lastCommand = session.getLastCommand();
+                long lastCommandStarted = session.getLastCommandStarted();
+                long lastCommandFinished = session.getLastCommandFinished();
+
+                Row row = new Row();
+                row.set(SessionId.name, sessionId);
+                row.set(SessionCommandCount.name, totalCommands);
+                row.set(SessionElapsedTimeMs.name, now - started);
+                if (lastCommand != null) {
+                    row.set(SessionLastCommand.name, lastCommand);
+                    row.set(SessionLastCommandElapsedTimeMs.name, now - lastCommandStarted);
+                    row.set(SessionLastCommandStartTime.name, formatter.format(new Date(lastCommandStarted)));
+                }
+                if (lastCommandFinished != 0L) {
+                    row.set(SessionLastCommandEndTime.name, formatter.format(new Date(lastCommandFinished)));
+                }
+                row.set(SessionStartTime.name, formatter.format(new Date(started)));
+
+                
+                row.set(SessionStatus.name, status);
+                addRow(row, rows);
+            }
+        }
+    }
+
+    static class DiscoverCommandsRowset extends Rowset {
+        private final Util.Predicate1<String> sessionIdCond;
+
+        DiscoverCommandsRowset(XmlaRequest request, XmlaHandler handler) {
+            super(DISCOVER_COMMANDS, request, handler);
+            sessionIdCond = makeCondition(SessionId);
+        }
+
+        private static final Column SessionId = new Column(
+            "SESSION_SPID",
+            Type.String, //In the spec, this is an integer, but our session ID's are not integers.
+            null,
+            Column.RESTRICTION,
+            Column.REQUIRED,
+            "The session ID.");
+
+        private static final Column SessionCommandCount = new Column(
+            "SESSION_COMMAND_COUNT",
+            Type.Integer,
+            null,
+            Column.NOT_RESTRICTION,
+            Column.REQUIRED,
+            "The number of commands executed since the start of the session.");
+
+        private static final Column CommandStartTime = new Column(
+            "COMMAND_START_TIME",
+            Type.DateTime,
+            null,
+            Column.NOT_RESTRICTION,
+            Column.REQUIRED,
+            "The date and time the last command started, expressed as UTC time on the server.");
+
+        private static final Column CommandEndTime = new Column(
+            "COMMAND_END_TIME",
+            Type.DateTime,
+            null,
+            Column.NOT_RESTRICTION,
+            Column.OPTIONAL,
+            "The server UTC date and time when the command finishes its execution.");
+
+        private static final Column CommandElapsedTimeMs = new Column(
+            "COMMAND_ELAPSED_TIME_MS",
+            Type.Long,
+            null,
+            Column.NOT_RESTRICTION,
+            Column.REQUIRED,
+            "The elapsed time, in milliseconds, since the start of the command.");
+
+        private static final Column CommandText = new Column(
+            "COMMAND_TEXT",
+            Type.String,
+            null,
+            Column.NOT_RESTRICTION,
+            Column.OPTIONAL,
+            "The command text.");
+
+        @Override
+        protected boolean needConnection() {
+            return false;
+        }
+
+        @Override
+        protected void populateImpl(
+            XmlaResponse response, OlapConnection connection, List<Row> rows)
+                throws XmlaException {
+            XmlaSessionManager manager = XmlaSessionManager.getInstance();
+            Map<String, XmlaSessionManager.XmlaSession> sessions = manager.getAllSessions();
+            long now = System.currentTimeMillis();
+            SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss");
+            formatter.setTimeZone(TimeZone.getTimeZone("UTC"));
+            for (String sessionId : sessions.keySet()) {
+                if (!sessionIdCond.test(sessionId)) {
+                    continue;
+                }
+                XmlaSessionManager.XmlaSession session = sessions.get(sessionId);
+                int totalCommands = session.getTotalCommandCount();
+                for (XmlaSessionManager.XmlaSessionCommand command : session.getAllCommands()) {
+                    Row row = new Row();
+                    row.set(SessionId.name, sessionId);
+                    row.set(SessionCommandCount.name, totalCommands);
+                    row.set(CommandStartTime.name, formatter.format(new Date(command.getStartTime())));
+                    // We only track running commands, so there is never a command end time.
+                    //row.set(CommandEndTime.name, "2006-01-25T17:35:32");
+                    row.set(CommandElapsedTimeMs.name, now - command.getStartTime());
+                    row.set(CommandText.name, command.getCommand());
+                    addRow(row, rows);
+                }
             }
         }
     }
@@ -6366,6 +6659,10 @@ TODO: see above
 
         public boolean isDrillThrough() {
             return request.isDrillThrough();
+        }
+
+        public boolean isCancel() {
+            return request.isCancel();
         }
 
         public String getUsername() {

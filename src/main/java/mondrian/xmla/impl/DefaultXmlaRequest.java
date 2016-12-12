@@ -42,6 +42,7 @@ public class DefaultXmlaRequest
     /* EXECUTE content */
     private String statement;
     private boolean drillthrough;
+    private boolean cancel;
 
     /* DISCOVER contnet */
     private String requestType;
@@ -122,6 +123,13 @@ public class DefaultXmlaRequest
         return drillthrough;
     }
 
+    public boolean isCancel() {
+        if (method != Method.EXECUTE) {
+            throw new IllegalStateException(
+                "Only METHOD_EXECUTE determines cancel");
+        }
+        return cancel;
+    }
 
     protected final void init(Element xmlaRoot) throws XmlaException {
         if (NS_XMLA.equals(xmlaRoot.getNamespaceURI())) {
@@ -387,24 +395,68 @@ public class DefaultXmlaRequest
 
 
     private void initCommand(Element commandRoot) throws XmlaException {
+        initCancel(commandRoot);
+        if (!cancel) {
+            Element[] childElems =
+                XmlaUtil.filterChildElements(
+                    commandRoot,
+                    NS_XMLA,
+                    "Statement");
+            if (childElems.length != 1) {
+                StringBuilder buf = new StringBuilder(100);
+                buf.append(MSG_INVALID_XMLA);
+                buf.append(": Wrong number of Statement elements: ");
+                buf.append(childElems.length);
+                throw new XmlaException(
+                    CLIENT_FAULT_FC,
+                    HSB_BAD_STATEMENT_CODE,
+                    HSB_BAD_STATEMENT_FAULT_FS,
+                    Util.newError(buf.toString()));
+            }
+            statement = XmlaUtil.textInElement(childElems[0]).replaceAll("\\r", "");
+            drillthrough = statement.toUpperCase().indexOf("DRILLTHROUGH") != -1;
+        }
+    }
+
+    private void initCancel(Element commandRoot) throws XmlaException {
         Element[] childElems =
             XmlaUtil.filterChildElements(
                 commandRoot,
-                NS_XMLA,
-                "Statement");
-        if (childElems.length != 1) {
+                NS_XMLA_MS_EXTENSIONS,
+                "Cancel");
+        if (childElems.length > 1) {
             StringBuilder buf = new StringBuilder(100);
             buf.append(MSG_INVALID_XMLA);
-            buf.append(": Wrong number of Statement elements: ");
+            buf.append(": Wrong number of Cancel elements: ");
             buf.append(childElems.length);
             throw new XmlaException(
                 CLIENT_FAULT_FC,
                 HSB_BAD_STATEMENT_CODE,
                 HSB_BAD_STATEMENT_FAULT_FS,
                 Util.newError(buf.toString()));
+        } else if (childElems.length == 1) {
+            Element cancelRoot = childElems[0];
+            childElems =
+                XmlaUtil.filterChildElements(
+                    cancelRoot,
+                    NS_XMLA_MS_EXTENSIONS,
+                    "SessionID");
+            if (childElems.length != 1) {
+                StringBuilder buf = new StringBuilder(100);
+                buf.append(MSG_INVALID_XMLA);
+                buf.append(": Wrong number of SessionID elements: ");
+                buf.append(childElems.length);
+                throw new XmlaException(
+                    CLIENT_FAULT_FC,
+                    HSB_BAD_STATEMENT_CODE,
+                    HSB_BAD_STATEMENT_FAULT_FS,
+                    Util.newError(buf.toString()));
+            }
+            statement = XmlaUtil.textInElement(childElems[0]);
+            cancel = true;
+        } else {
+            cancel = false;
         }
-        statement = XmlaUtil.textInElement(childElems[0]).replaceAll("\\r", "");
-        drillthrough = statement.toUpperCase().indexOf("DRILLTHROUGH") != -1;
     }
 }
 
