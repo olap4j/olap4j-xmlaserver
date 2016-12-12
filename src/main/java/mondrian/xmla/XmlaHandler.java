@@ -64,6 +64,8 @@ public class XmlaHandler {
 
     final ConnectionFactory connectionFactory;
     private final String prefix;
+    private Map<XmlaRequest, QueryResult> queryResultLookup;
+    private boolean streamExecuteResults;
 
     /**
      * Returns a new OlapConnection opened with the credentials specified in the
@@ -610,6 +612,29 @@ public class XmlaHandler {
         assert prefix != null;
         this.connectionFactory = connectionFactory;
         this.prefix = prefix;
+        this.streamExecuteResults = false;
+    }
+
+    public void setStreamExecuteResults(final int maxResultsToDefer) {
+        if (!this.streamExecuteResults) {
+            this.streamExecuteResults = true;
+            this.queryResultLookup = new LinkedHashMap<XmlaRequest, QueryResult>() {
+                @Override
+                protected boolean removeEldestEntry(
+                    java.util.Map.Entry<XmlaRequest, QueryResult> eldest)
+                {
+                    if (size() > maxResultsToDefer) {
+                        try {
+                            eldest.getValue().close();
+                        } catch (Exception e) {
+                            //ignore
+                        }
+                        return true;
+                    }
+                    return false;
+                }
+            };
+        }
     }
 
     /**
@@ -693,22 +718,6 @@ public class XmlaHandler {
         XmlaResponse response)
         throws XmlaException
     {
-        final Map<String, String> properties = request.getProperties();
-
-        // Default responseMimeType is SOAP.
-        Enumeration.ResponseMimeType responseMimeType =
-            getResponseMimeType(request);
-
-        // Default value is SchemaData, or Data for JSON responses.
-        final String contentName =
-            properties.get(PropertyDefinition.Content.name());
-        Content content = Util.lookup(
-            Content.class,
-            contentName,
-            responseMimeType == Enumeration.ResponseMimeType.JSON
-                ? Content.Data
-                : Content.DEFAULT);
-
         // Handle execute
         QueryResult result = null;
         try {
@@ -717,8 +726,80 @@ public class XmlaHandler {
             } else {
                 result = executeQuery(request);
             }
+        } catch (XmlaException xe) {
+            if (result != null) {
+                try {
+                    result.close();
+                } catch (SQLException e) {
+                    //ignore
+                }
+            }
+            throw xe;
+        } catch (RuntimeException re) {
+            if (result != null) {
+                try {
+                    result.close();
+                } catch (SQLException e) {
+                    //ignore
+                }
+            }
+            throw re;
+        }
+        if (streamExecuteResults) {
+            synchronized(queryResultLookup) {
+                queryResultLookup.put(request, result);
+            }
+        } else {
+            writeQueryResult(result, request, response.getWriter());
+        }
+    }
 
-            SaxWriter writer = response.getWriter();
+    public void writeQueryResult(XmlaRequest request, SaxWriter writer) {
+        QueryResult result;
+        synchronized(queryResultLookup) {
+            result = queryResultLookup.remove(request);
+        }
+        if (result != null) {
+            writeQueryResult(result, request, writer);
+        }
+    }
+
+    public void closeQueryResult(XmlaRequest request) {
+        QueryResult result = null;
+        if (queryResultLookup != null) {
+            synchronized(queryResultLookup) {
+                result = queryResultLookup.remove(request);
+            }
+        }
+        if (result != null) {
+            try {
+                result.close();
+            } catch (SQLException e) {
+                //ignore
+            }
+        }
+    }
+
+    private void writeQueryResult(QueryResult result,
+            XmlaRequest request, SaxWriter writer) {
+        try {
+            final Map<String, String> properties = request.getProperties();
+
+            // Default responseMimeType is SOAP.
+            Enumeration.ResponseMimeType responseMimeType =
+                getResponseMimeType(request);
+
+            // Default value is SchemaData, or Data for JSON responses.
+            final String contentName =
+                properties.get(PropertyDefinition.Content.name());
+            Content content = Util.lookup(
+                Content.class,
+                contentName,
+                responseMimeType == Enumeration.ResponseMimeType.JSON
+                    ? Content.Data
+                    : Content.DEFAULT);
+
+
             writer.startDocument();
 
             writer.startElement(

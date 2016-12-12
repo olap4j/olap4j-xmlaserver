@@ -43,10 +43,26 @@ public abstract class DefaultXmlaServlet extends XmlaServlet {
      */
     private static final String REQUIRE_AUTHENTICATED_SESSIONS =
         "requireAuthenticatedSessions";
+    /**
+     * Servlet config parameter that determines whether the xmla
+     * body will be streamed.
+     */
+    private static final String STREAM_XMLA_BODY =
+        "streamXmlaBody";
+    /**
+     * Servlet config parameter that determines the maximum number
+     * of query results that can be concurrently deferred.
+     * Used only when streaming results.
+     */
+    private static final String MAX_RESULTS_TO_DEFER = "maxResultsToDefer";
+    private static final int DEFAULT_MAX_RESULTS_TO_DEFER = 30;
+    protected static final String CONTEXT_XMLA_REQUEST = "xmlaRequest";
 
     private DocumentBuilderFactory domFactory = null;
 
     private boolean requireAuthenticatedSessions = false;
+    protected boolean streamXmlaBody = false;
+    protected int maxResultsToRetain;
 
     /**
      * Session properties, keyed by session ID. Currently just username and
@@ -61,6 +77,23 @@ public abstract class DefaultXmlaServlet extends XmlaServlet {
         this.requireAuthenticatedSessions =
             Boolean.parseBoolean(
                 servletConfig.getInitParameter(REQUIRE_AUTHENTICATED_SESSIONS));
+        this.streamXmlaBody =
+            Boolean.parseBoolean(
+                servletConfig.getInitParameter(STREAM_XMLA_BODY));
+        if (streamXmlaBody) {
+            String initMaxResultsToDefer = servletConfig.getInitParameter(MAX_RESULTS_TO_DEFER);
+            if (initMaxResultsToDefer != null) {
+                try {
+                    this.maxResultsToRetain =
+                        Integer.parseInt(initMaxResultsToDefer);
+                } catch (NumberFormatException nfe) {
+                    LOGGER.warn("Max results to defer servlet parameter must be an integer.", nfe);
+                    this.maxResultsToRetain = DEFAULT_MAX_RESULTS_TO_DEFER;
+                }
+            } else {
+                this.maxResultsToRetain = DEFAULT_MAX_RESULTS_TO_DEFER;
+            }
+        }
     }
 
     protected static DocumentBuilderFactory getDocumentBuilderFactory() {
@@ -502,7 +535,14 @@ public abstract class DefaultXmlaServlet extends XmlaServlet {
                 new DefaultXmlaResponse(osBuf, encoding, responseMimeType);
 
             try {
-                getXmlaHandler().process(xmlaReq, xmlaRes);
+                XmlaHandler handler = getXmlaHandler();
+                if (streamXmlaBody) {
+                    handler.setStreamExecuteResults(maxResultsToRetain);
+                }
+                handler.process(xmlaReq, xmlaRes);
+                if (streamXmlaBody) {
+                    context.put(CONTEXT_XMLA_REQUEST, xmlaReq);
+                }
             } catch (XmlaException ex) {
                 throw ex;
             } catch (Exception ex) {
@@ -528,7 +568,8 @@ public abstract class DefaultXmlaServlet extends XmlaServlet {
     protected void marshallSoapMessage(
         HttpServletResponse response,
         byte[][] responseSoapParts,
-        Enumeration.ResponseMimeType responseMimeType)
+        Enumeration.ResponseMimeType responseMimeType,
+        Map<String, Object> context)
         throws XmlaException
     {
         try {
@@ -567,6 +608,7 @@ public abstract class DefaultXmlaServlet extends XmlaServlet {
             byte[] soapBody = responseSoapParts[1];
 
             Object[] byteChunks = null;
+            int bodyChunkIndex = 0;
 
             try {
                 switch (responseMimeType) {
@@ -574,6 +616,7 @@ public abstract class DefaultXmlaServlet extends XmlaServlet {
                     byteChunks = new Object[] {
                         soapBody,
                     };
+                    bodyChunkIndex = 0;
                     break;
 
                 case SOAP:
@@ -599,6 +642,7 @@ public abstract class DefaultXmlaServlet extends XmlaServlet {
                         soapBody,
                         s4.getBytes(encoding),
                     };
+                    bodyChunkIndex = 3;
                     break;
                 }
             } catch (UnsupportedEncodingException uee) {
@@ -633,25 +677,14 @@ public abstract class DefaultXmlaServlet extends XmlaServlet {
                 int bufferSize = 4096;
                 ByteBuffer buffer = ByteBuffer.allocate(bufferSize);
                 WritableByteChannel wch = Channels.newChannel(outputStream);
-                ReadableByteChannel rch;
+                int index = 0;
                 for (Object byteChunk : byteChunks) {
-                    if (byteChunk == null || ((byte[]) byteChunk).length == 0) {
-                        continue;
+                    // Write the byte chunk even when streaming the XML/A body.
+                    writeBytes(byteChunk, buffer, wch, bufferSize);
+                    if (index == bodyChunkIndex && this.streamXmlaBody) {
+                        streamBody(response, outputStream, context);
                     }
-                    rch = Channels.newChannel(
-                        new ByteArrayInputStream((byte[]) byteChunk));
-
-                    int readSize;
-                    do {
-                        buffer.clear();
-                        readSize = rch.read(buffer);
-                        buffer.flip();
-
-                        int writeSize = 0;
-                        while ((writeSize += wch.write(buffer)) < readSize) {
-                        }
-                    } while (readSize == bufferSize);
-                    rch.close();
+                    index++;
                 }
                 outputStream.flush();
             } catch (IOException ioe) {
@@ -660,14 +693,71 @@ public abstract class DefaultXmlaServlet extends XmlaServlet {
                     ioe);
             }
         } catch (XmlaException xex) {
+            closeQueryResult(context);
             throw xex;
         } catch (Exception ex) {
+            closeQueryResult(context);
             throw new XmlaException(
                 SERVER_FAULT_FC,
                 MSM_UNKNOWN_CODE,
                 MSM_UNKNOWN_FAULT_FS,
                 ex);
         }
+    }
+
+    private void writeBytes(Object byteChunk, ByteBuffer buffer,
+            WritableByteChannel wch, int bufferSize)
+            throws IOException {
+        if (byteChunk == null || ((byte[]) byteChunk).length == 0) {
+            return;
+        }
+        ReadableByteChannel rch = Channels.newChannel(
+            new ByteArrayInputStream((byte[]) byteChunk));
+
+        int readSize;
+        do {
+            buffer.clear();
+            readSize = rch.read(buffer);
+            buffer.flip();
+
+            int writeSize = 0;
+            while ((writeSize += wch.write(buffer)) < readSize) {
+            }
+        } while (readSize == bufferSize);
+        rch.close();
+    }
+
+    protected void streamBody(
+        HttpServletResponse response,
+        OutputStream os,
+        Map<String, Object> context)
+    {
+        XmlaRequest xmlaRequest = (XmlaRequest)context.get(CONTEXT_XMLA_REQUEST);
+        // "ResponseMimeType" may be in the context if the "Accept" HTTP
+        // header was specified. But override if the SOAP request has the
+        // "ResponseMimeType" property.
+        Enumeration.ResponseMimeType responseMimeType =
+            Enumeration.ResponseMimeType.SOAP;
+        final String responseMimeTypeName =
+            xmlaRequest.getProperties().get("ResponseMimeType");
+        if (responseMimeTypeName != null) {
+            responseMimeType =
+                Enumeration.ResponseMimeType.MAP.get(
+                    responseMimeTypeName);
+            if (responseMimeType != null) {
+                context.put(CONTEXT_MIME_TYPE, responseMimeType);
+            }
+        }
+
+        XmlaResponse xmlaResponse =
+            new DefaultXmlaResponse(
+                os, response.getCharacterEncoding(), responseMimeType);
+        getXmlaHandler().writeQueryResult(xmlaRequest, xmlaResponse.getWriter());
+    }
+
+    protected void closeQueryResult(Map<String, Object> context) {
+        XmlaRequest xmlaRequest = (XmlaRequest)context.get(CONTEXT_XMLA_REQUEST);
+        getXmlaHandler().closeQueryResult(xmlaRequest);
     }
 
     /**
@@ -680,6 +770,10 @@ public abstract class DefaultXmlaServlet extends XmlaServlet {
         Phase phase,
         Throwable t)
     {
+        // If we were streaming results, we cannot send an XML/A fault
+        if (response.isCommitted()) {
+            return;
+        }
         // Regardless of whats been put into the response so far, clear
         // it out.
         response.reset();
@@ -781,7 +875,7 @@ public abstract class DefaultXmlaServlet extends XmlaServlet {
                 uee);
         } catch (Exception e) {
             LOGGER.error(
-                "Unexcepted runimt exception when handing SOAP fault :(");
+                "Unexpected runtime exception when handing SOAP fault :(");
         }
 
         responseSoapParts[1] = osBuf.toByteArray();
